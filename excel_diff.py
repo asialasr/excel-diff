@@ -58,6 +58,7 @@ def diff_to_sheet(out_path, csv_diff_path):
                     new_list = []
                     for col in range(iter_size):
                         new_list.append('||'.join([first_line[col], second_line[col]]))
+                    out_file.write('Change/Sub,')
                     out_file.write(','.join(new_list))
                     out_file.write('\n')
                 elif is_change_add:
@@ -72,16 +73,20 @@ def diff_to_sheet(out_path, csv_diff_path):
                     new_list = []
                     for col in range(iter_size):
                         new_list.append('||'.join([first_line[col], second_line[col]]))
+                    out_file.write('Change/add,')
                     out_file.write(','.join(new_list))
                     out_file.write('\n')
                 elif is_add:
+                    out_file.write('New Line,')
                     out_file.write(add_split[2])
                     out_file.write('\n')
                 elif is_remove:
+                    out_file.write('Deleted Line,')
                     out_file.write(remove_split[2])
                     out_file.write('\n')
                 elif len(change_sub_split) == 1:
                     if len(line.split('  ')) == 2:
+                        out_file.write('No Change,')
                         out_file.write(line.split('  ')[1])
                         out_file.write('\n')
                 else:
