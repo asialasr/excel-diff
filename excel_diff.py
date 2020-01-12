@@ -5,6 +5,7 @@ import xlrd
 import csv
 import difflib
 import re
+import xlsxwriter
 
 CSV_PATH="temp.csv"
 DIFF_OUT_PATH="temp.diff"
@@ -73,7 +74,7 @@ def check_change_add(line, out_file):
                 new_list.append('||'.join([first_line[col], second_line[col]]))
             else:
                 new_list.append(first_line[col])
-        out_file.write('Change/add,')
+        out_file.write('Change/Add,')
         out_file.write(','.join(new_list))
         out_file.write('\n')
         return True
@@ -134,7 +135,44 @@ def diff_to_sheet(out_path, csv_diff_path):
         out_file.close()
         return False
     return False
-                    
+
+def csv_to_xlsx(csv_path, xlsx_path):
+    # TODO(sasiala): convert to only add sheets in this function
+    workbook = xlsxwriter.Workbook(xlsx_path)
+    worksheet = workbook.add_worksheet()
+    change_add_format = workbook.add_format({'bold':True, 'bg_color':'green'})
+    change_sub_format = workbook.add_format({'bold':True, 'bg_color':'red'})
+    no_change_format = workbook.add_format()
+    with open(csv_path, 'r') as csv_file:
+        csv_reader = csv.reader(csv_file)
+        for r, row in enumerate(csv_reader):
+            temp = list(enumerate(row))
+            line_format = change_add_format
+            if not len(temp) == 0:
+                if (temp[0][1] == 'Change/Sub'):
+                    print('Change/Sub')
+                    line_format = change_sub_format
+                elif (temp[0][1] == 'Change/Add'):
+                    print('Change/Add')
+                elif (temp[0][1] == 'New Line'):
+                    print('New Line')
+                elif (temp[0][1] == 'Deleted Line'):
+                    print('Deleted Line')
+                    line_format = change_sub_format
+                elif (temp[0][1] == 'No Change'):
+                    print('No Change')
+                    line_format = no_change_format
+                else:
+                    print('Curious...')
+            
+            for c, col in enumerate(row):
+                worksheet.write(r, c, col, line_format)
+                
+        workbook.close()
+        return True
+        workbook.close()
+    return False
+
 
 def process_xlsx(path):
     with xlrd.open_workbook(path) as xlsx_file:
@@ -147,6 +185,9 @@ def process_xlsx(path):
                 return False
             if not diff_to_sheet('temp_diff_out.csv', 'temp.diff'):
                 print("Diff to sheet failed")
+                return False
+            if not csv_to_xlsx('temp_diff_out.csv', 'final_out.xlsx'):
+                print("CSV to XLSX failed")
                 return False
         return True
     return False
