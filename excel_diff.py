@@ -32,60 +32,85 @@ def csv_diff(csvl, csvr):
         return True
     return False
 
+def check_change_sub(line, out_file):
+    split_lines = re.split('\n\?.*\n\+ ', line)
+    
+    if len(split_lines) == 2:
+        first_line = split_lines[0].split('- ')[1].split(',')
+        second_line = split_lines[1].split(',')
+        iter_size = len(first_line)
+        if (len(first_line) > len(second_line)):
+            iter_size = len(second_line)
+        
+        # TODO(sasiala): deal with lines of diff sizes (skipping rest of output, currently)
+        new_list = []
+        for col in range(iter_size):
+            new_list.append('||'.join([first_line[col], second_line[col]]))
+        out_file.write('Change/Sub,')
+        out_file.write(','.join(new_list))
+        out_file.write('\n')
+        return True
+    return False
+
+def check_change_add(line, out_file):
+    split_lines = re.split('\n\?.*$', line)
+
+    if len(split_lines) == 2:
+        temp_lines = split_lines[0].split('\n')
+        first_line = temp_lines[0].split('- ')[1].split(',')
+        second_line = re.split('\+ ', temp_lines[1])[1].split(',')
+        iter_size = len(first_line)
+        if (len(first_line) > len(second_line)):
+            iter_size = len(second_line)
+
+        # TODO(sasiala): deal with lines of diff sizes (skipping rest of output, currently)
+        new_list = []
+        for col in range(iter_size):
+            new_list.append('||'.join([first_line[col], second_line[col]]))
+        out_file.write('Change/add,')
+        out_file.write(','.join(new_list))
+        out_file.write('\n')
+        return True
+    return False
+
+def check_new_line(line, out_file):
+    split_lines = re.split('\+ ', line)
+
+    if len(split_lines) == 4:
+        out_file.write('New Line,')
+        out_file.write(split_lines[2])
+        out_file.write('\n')
+        return True
+    return False
+
+def check_deleted_line(line, out_file):
+    split_lines = re.split('- ', line)
+
+    if len(split_lines) == 4:
+        out_file.write('Deleted Line,')
+        out_file.write(split_lines[2])
+        out_file.write('\n')
+        return True
+    return False
+
 def diff_to_sheet(out_path, csv_diff_path):
     with open(out_path, 'w') as out_file:
         with open(csv_diff_path, 'r') as csv_diff:
             lines = csv_diff.read().split('\n  \n')
             for line in lines:
-                change_sub_split = re.split('\n\?.*\n\+ ', line)
-                is_change_sub = len(change_sub_split) == 2
-                change_add_split = re.split('\n\?.*$', line)
-                is_change_add = len(change_add_split) == 2
-                remove_split = re.split('- ', line)
-                is_remove = len(remove_split) == 4
-                add_split = re.split('\+ ', line)
-                is_add = len(add_split) == 4
+                change_sub_split = re.split('\n\?.*\n\+ ', line) # TODO
 
-                if is_change_sub:
-                    temp_first_line = change_sub_split[0].split('- ')[1]
-                    first_line = temp_first_line.split(',')
-                    second_line = change_sub_split[1].split(',')
-                    iter_size = len(first_line)
-                    if (len(first_line) > len(second_line)):
-                        iter_size = len(second_line)
-                    
-                    # TODO(sasiala): deal with lines of diff sizes (skipping rest of output, currently)
-                    new_list = []
-                    for col in range(iter_size):
-                        new_list.append('||'.join([first_line[col], second_line[col]]))
-                    out_file.write('Change/Sub,')
-                    out_file.write(','.join(new_list))
-                    out_file.write('\n')
-                elif is_change_add:
-                    temp_lines = change_add_split[0].split('\n')
-                    first_line = temp_lines[0].split('- ')[1].split(',')
-                    second_line = re.split('\+ ', temp_lines[1])[1].split(',')
-                    iter_size = len(first_line)
-                    if (len(first_line) > len(second_line)):
-                        iter_size = len(second_line)
-
-                    # TODO(sasiala): deal with lines of diff sizes (skipping rest of output, currently)
-                    new_list = []
-                    for col in range(iter_size):
-                        new_list.append('||'.join([first_line[col], second_line[col]]))
-                    out_file.write('Change/add,')
-                    out_file.write(','.join(new_list))
-                    out_file.write('\n')
-                elif is_add:
-                    out_file.write('New Line,')
-                    out_file.write(add_split[2])
-                    out_file.write('\n')
-                elif is_remove:
-                    out_file.write('Deleted Line,')
-                    out_file.write(remove_split[2])
-                    out_file.write('\n')
+                if check_change_sub(line, out_file):
+                    print('Change/Sub')
+                elif check_change_add(line, out_file):
+                    print('Change/Add')
+                elif check_new_line(line, out_file):
+                    print('New Line')
+                elif check_deleted_line(line, out_file):
+                    print('Deleted Line')
                 elif len(change_sub_split) == 1:
                     if len(line.split('  ')) == 2:
+                        print('No Change')
                         out_file.write('No Change,')
                         out_file.write(line.split('  ')[1])
                         out_file.write('\n')
