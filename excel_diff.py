@@ -45,7 +45,10 @@ def check_change_sub(line, out_file):
         # TODO(sasiala): deal with lines of diff sizes (skipping rest of output, currently)
         new_list = []
         for col in range(iter_size):
-            new_list.append('||'.join([first_line[col], second_line[col]]))
+            if not first_line[col] == second_line[col]:
+                new_list.append('||'.join([first_line[col], second_line[col]]))
+            else:
+                new_list.append(first_line[col])
         out_file.write('Change/Sub,')
         out_file.write(','.join(new_list))
         out_file.write('\n')
@@ -66,7 +69,10 @@ def check_change_add(line, out_file):
         # TODO(sasiala): deal with lines of diff sizes (skipping rest of output, currently)
         new_list = []
         for col in range(iter_size):
-            new_list.append('||'.join([first_line[col], second_line[col]]))
+            if not first_line[col] == second_line[col]:
+                new_list.append('||'.join([first_line[col], second_line[col]]))
+            else:
+                new_list.append(first_line[col])
         out_file.write('Change/add,')
         out_file.write(','.join(new_list))
         out_file.write('\n')
