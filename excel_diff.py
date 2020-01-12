@@ -1,6 +1,10 @@
+__author__ = "Sean Asiala"
+__copyright__ = "Copyright (C) 2020 Sean Asiala"
+
 import xlrd
 import csv
 import difflib
+import re
 
 CSV_PATH="temp.csv"
 DIFF_OUT_PATH="temp.diff"
@@ -28,18 +32,64 @@ def csv_diff(csvl, csvr):
         return True
     return False
 
+def diff_to_sheet(out_path, csv_diff_path):
+    with open(out_path, 'w') as out_file:
+        with open(csv_diff_path, 'r') as csv_diff:
+            lines = csv_diff.read().split('\n  \n')
+            for line in lines:
+                temp = re.split('\n\?.*\n\+ ', line)
+                
+                if len(temp) == 2:
+                    temp_first_line = temp[0].split('- ')[1]
+                    first_line = temp_first_line.split(',')
+                    second_line = temp[1].split(',')
+                    iter_size = len(first_line)
+                    if (len(first_line) > len(second_line)):
+                        iter_size = len(second_line)
+                    
+                    # TODO(sasiala): deal with lines of diff sizes (skipping rest of output, currently)
+                    new_list = []
+                    for col in range(iter_size):
+                        new_list.append('||'.join([first_line[col], second_line[col]]))
+                    out_file.write(','.join(new_list))
+                    out_file.write('\n')
+                elif len(temp) == 1:
+                    print(line)
+                    out_file.write(line.split('  ')[1])
+                    out_file.write('\n')
+                else:
+                    # unexpected format in diff
+                    csv_diff.close()
+                    out_file.close()
+                    print(len(temp))
+                    print(temp)
+                    print(line)
+                    return False
+            csv_diff.close()
+            out_file.close()
+            return True
+        out_file.close()
+        return False
+    return False
+                    
+
 def process_xlsx(path):
     with xlrd.open_workbook(path) as xlsx_file:
         for sheet_num in range(xlsx_file.nsheets):
             if not sheet_to_csv(xlsx_file.sheet_by_index(sheet_num)):
+                print("Sheet to csv failed")
                 return False
-            
+            if not csv_diff('temp.csv', 'tempr.csv'):
+                print("Csv diff failed")
+                return False
+            if not diff_to_sheet('temp_diff_out.csv', 'temp.diff'):
+                print("Diff to sheet failed")
+                return False
         return True
     return False
 
 def main():
     process_xlsx("C:\\Users\\Sean\\Documents\\Moving\\Packed list.xlsx")
-    csv_diff("temp.csv", "tempr.csv")
 
 if __name__ == "__main__":
     # execute only if run as a script
