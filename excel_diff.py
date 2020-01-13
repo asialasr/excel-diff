@@ -7,8 +7,6 @@ import difflib
 import re
 import xlsxwriter
 
-DIFF_OUT_PATH="temp.diff"
-
 def sheet_to_csv(sheet, out_path):
     with open(out_path, 'w') as temp_csv:
         wr = csv.writer(temp_csv, quoting=csv.QUOTE_ALL)
@@ -20,12 +18,12 @@ def sheet_to_csv(sheet, out_path):
         return True
     return False
 
-def csv_diff(csvl, csvr):
+def csv_diff(csvl, csvr, out_path):
     with open(csvl, 'r') as csvl_file:
         with open(csvr, 'r') as csvr_file:
             d = difflib.Differ()
             diff = difflib.ndiff(csvl_file.read().splitlines(1), csvr_file.read().splitlines(1))
-    with open(DIFF_OUT_PATH, 'w') as diff_file:
+    with open(out_path, 'w') as diff_file:
         for line in diff:
             diff_file.writelines(line)
         diff_file.close()
@@ -99,7 +97,7 @@ def check_deleted_line(line, out_file):
         return True
     return False
 
-def diff_to_sheet(out_path, csv_diff_path):
+def diff_to_sheet(csv_diff_path, out_path):
     with open(out_path, 'w') as out_file:
         with open(csv_diff_path, 'r') as csv_diff:
             lines = csv_diff.read().split('\n  \n')
@@ -173,10 +171,10 @@ def csv_to_xlsx(csv_path, xlsx_path):
     return False
 
 
-def process_xlsx(path):
+def process_xlsx(lhs_path, rhs_path):
     left_temp_path = 'temp/lhs'
     right_temp_path = 'temp/rhs'
-    with xlrd.open_workbook(path) as xlsx_file:
+    with xlrd.open_workbook(lhs_path) as xlsx_file:
         for sheet_num in range(xlsx_file.nsheets):
             # TODO(sasiala): match sheets up so that diff is complete
             sheet_path = left_temp_path + '/sheet_' + str(sheet_num) + '.csv'
@@ -184,7 +182,7 @@ def process_xlsx(path):
                 print("Sheet to csv failed")
                 return False
 
-    with xlrd.open_workbook('tests/test_xlsx_2.xlsx') as xlsx_file:
+    with xlrd.open_workbook(rhs_path) as xlsx_file:
         for sheet_num in range(xlsx_file.nsheets):
             # TODO(sasiala): match sheets up so that diff is complete
             sheet_path = right_temp_path + '/sheet_' + str(sheet_num) + '.csv'
@@ -193,20 +191,20 @@ def process_xlsx(path):
                 return False
     
     # TODO(sasiala): automate diffs with glob
-    if not csv_diff('temp/lhs/sheet_0.csv', 'temp/rhs/sheet_0.csv'):
+    if not csv_diff('temp/lhs/sheet_0.csv', 'temp/rhs/sheet_0.csv', 'temp/csv_diff/sheet_0.diff'):
         print("Csv diff failed")
         return False
-    if not diff_to_sheet('temp_diff_out.csv', 'temp.diff'):
+    if not diff_to_sheet('temp/csv_diff/sheet_0.diff', 'temp/diff_sheets/sheet_0.csv'):
         print("Diff to sheet failed")
         return False
-    if not csv_to_xlsx('temp_diff_out.csv', 'final_out.xlsx'):
+    if not csv_to_xlsx('temp/diff_sheets/sheet_0.csv', 'output/final_out.xlsx'):
         print("CSV to XLSX failed")
         return False
         return True
     return False
 
 def main():
-    process_xlsx("tests\\test_xlsx_l.xlsx")
+    process_xlsx("tests\\test_xlsx_l.xlsx", 'tests/test_xlsx_2.xlsx')
 
 if __name__ == "__main__":
     # execute only if run as a script
