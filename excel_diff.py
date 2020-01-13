@@ -7,11 +7,10 @@ import difflib
 import re
 import xlsxwriter
 
-CSV_PATH="temp.csv"
 DIFF_OUT_PATH="temp.diff"
 
-def sheet_to_csv(sheet):
-    with open(CSV_PATH, 'w') as temp_csv:
+def sheet_to_csv(sheet, out_path):
+    with open(out_path, 'w') as temp_csv:
         wr = csv.writer(temp_csv, quoting=csv.QUOTE_ALL)
 
         for row_num in range(sheet.nrows):
@@ -175,20 +174,34 @@ def csv_to_xlsx(csv_path, xlsx_path):
 
 
 def process_xlsx(path):
+    left_temp_path = 'temp/lhs'
+    right_temp_path = 'temp/rhs'
     with xlrd.open_workbook(path) as xlsx_file:
         for sheet_num in range(xlsx_file.nsheets):
-            if not sheet_to_csv(xlsx_file.sheet_by_index(sheet_num)):
+            # TODO(sasiala): match sheets up so that diff is complete
+            sheet_path = left_temp_path + '/sheet_' + str(sheet_num) + '.csv'
+            if not sheet_to_csv(xlsx_file.sheet_by_index(sheet_num), sheet_path):
                 print("Sheet to csv failed")
                 return False
-            if not csv_diff('temp.csv', 'tempr.csv'):
-                print("Csv diff failed")
+
+    with xlrd.open_workbook('tests/test_xlsx_2.xlsx') as xlsx_file:
+        for sheet_num in range(xlsx_file.nsheets):
+            # TODO(sasiala): match sheets up so that diff is complete
+            sheet_path = right_temp_path + '/sheet_' + str(sheet_num) + '.csv'
+            if not sheet_to_csv(xlsx_file.sheet_by_index(sheet_num), sheet_path):
+                print("Sheet to csv failed (right)")
                 return False
-            if not diff_to_sheet('temp_diff_out.csv', 'temp.diff'):
-                print("Diff to sheet failed")
-                return False
-            if not csv_to_xlsx('temp_diff_out.csv', 'final_out.xlsx'):
-                print("CSV to XLSX failed")
-                return False
+    
+    # TODO(sasiala): automate diffs with glob
+    if not csv_diff('temp/lhs/sheet_0.csv', 'temp/rhs/sheet_0.csv'):
+        print("Csv diff failed")
+        return False
+    if not diff_to_sheet('temp_diff_out.csv', 'temp.diff'):
+        print("Diff to sheet failed")
+        return False
+    if not csv_to_xlsx('temp_diff_out.csv', 'final_out.xlsx'):
+        print("CSV to XLSX failed")
+        return False
         return True
     return False
 
