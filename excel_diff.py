@@ -8,6 +8,8 @@ import re
 import xlsxwriter
 import os # mkdir, path.exists
 import shutil # rmtree
+import glob
+import ntpath
 
 def sheet_to_csv(sheet, out_path):
     with open(out_path, 'w') as temp_csv:
@@ -189,6 +191,9 @@ def setup_output_directory():
     if not os.path.exists('output'):
         os.mkdir('output')
 
+def path_leaf(path):
+    head, tail = ntpath.split(path)
+    return tail or ntpath.basename(head)
 
 def process_xlsx(lhs_path, rhs_path):
     setup_temp_directories()
@@ -213,6 +218,13 @@ def process_xlsx(lhs_path, rhs_path):
                 return False
     
     # TODO(sasiala): automate diffs with glob
+    temp_lhs_sheets = glob.glob('temp/lhs/sheet_*.csv')
+    lhs_filenames = [path_leaf(i) for i in temp_lhs_sheets]
+    temp_rhs_sheets = glob.glob('temp/rhs/sheet_*.csv')
+    rhs_filenames = [path_leaf(i) for i in temp_rhs_sheets]
+    print(lhs_filenames)
+    print(rhs_filenames)
+
     if not csv_diff('temp/lhs/sheet_0.csv', 'temp/rhs/sheet_0.csv', 'temp/csv_diff/sheet_0.diff'):
         print("Csv diff failed")
         return False
