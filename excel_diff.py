@@ -193,7 +193,7 @@ def process_xlsx(path):
     return False
 
 def main():
-    process_xlsx("C:\\Users\\Sean\\Documents\\Moving\\Packed list.xlsx")
+    process_xlsx("tests\\test_xlsx_l.xlsx")
 
 if __name__ == "__main__":
     # execute only if run as a script
