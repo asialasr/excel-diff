@@ -6,6 +6,8 @@ import csv
 import difflib
 import re
 import xlsxwriter
+import os # mkdir, path.exists
+import shutil # rmtree
 
 def sheet_to_csv(sheet, out_path):
     with open(out_path, 'w') as temp_csv:
@@ -170,8 +172,28 @@ def csv_to_xlsx(csv_path, xlsx_path):
         workbook.close()
     return False
 
+def remove_temp_directories():
+    if os.path.exists('temp'):
+        shutil.rmtree('temp')
+
+def setup_temp_directories():
+    remove_temp_directories()
+
+    os.mkdir('temp')
+    os.mkdir('temp/lhs')
+    os.mkdir('temp/rhs')
+    os.mkdir('temp/diff_sheets')
+    os.mkdir('temp/csv_diff')
+
+def setup_output_directory():
+    if not os.path.exists('output'):
+        os.mkdir('output')
+
 
 def process_xlsx(lhs_path, rhs_path):
+    setup_temp_directories()
+    setup_output_directory()
+
     left_temp_path = 'temp/lhs'
     right_temp_path = 'temp/rhs'
     with xlrd.open_workbook(lhs_path) as xlsx_file:
@@ -200,8 +222,10 @@ def process_xlsx(lhs_path, rhs_path):
     if not csv_to_xlsx('temp/diff_sheets/sheet_0.csv', 'output/final_out.xlsx'):
         print("CSV to XLSX failed")
         return False
-        return True
-    return False
+
+    # TODO(sasiala): remove temp directories, also remove at other returns
+    # remove_temp_directories()
+    return True
 
 def main():
     process_xlsx("tests\\test_xlsx_l.xlsx", 'tests/test_xlsx_2.xlsx')
