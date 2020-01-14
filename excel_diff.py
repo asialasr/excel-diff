@@ -46,6 +46,7 @@ def csv_diff(csvl, csvr, out_path):
     return False
 
 def check_change_sub(line, out_file):
+    # TODO(sasiala): change to similar format to new/deleted lines
     split_lines = re.split('\n\?.*\n\+ ', line)
     
     if len(split_lines) == 2:
@@ -69,6 +70,7 @@ def check_change_sub(line, out_file):
     return False
 
 def check_change_add(line, out_file):
+    # TODO(sasiala): change to similar format to new/deleted lines
     split_lines = re.split('\n\?.*$', line)
 
     if len(split_lines) == 2:
