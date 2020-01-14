@@ -103,12 +103,15 @@ def check_new_line(line, out_file):
     return False
 
 def check_deleted_line(line, out_file):
-    split_lines = re.split('- ', line)
+    is_deleted_line = re.match('[- .*[\n|$]]+', line)
 
-    if len(split_lines) == 4:
-        out_file.write('Deleted Line,')
-        out_file.write(split_lines[2])
-        out_file.write('\n')
+    if is_deleted_line:
+        split_lines = line.split('\n')
+        for i in split_lines:
+            if not re.match('- $', i):
+                out_file.write('Deleted Line,')
+                out_file.write(re.split('- ', i)[1])
+                out_file.write('\n')
         return True
     return False
 
