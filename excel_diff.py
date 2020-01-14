@@ -11,6 +11,17 @@ import shutil # rmtree
 import glob
 import ntpath
 
+def path_leaf(path):
+    head, tail = ntpath.split(path)
+    return tail or ntpath.basename(head)
+
+def log(log_path, message):
+    with open('log\\combined.log', 'a+') as combined_log:
+        with open(log_path, 'a+') as log_file:
+            log_file.write(message + '\n')
+            combined_log.write(path_leaf(log_path) + ': ' + message + '\n')
+
+
 def sheet_to_csv(sheet, out_path):
     with open(out_path, 'w') as temp_csv:
         wr = csv.writer(temp_csv, quoting=csv.QUOTE_ALL)
@@ -109,16 +120,16 @@ def diff_to_sheet(csv_diff_path, out_path):
                 change_sub_split = re.split('\n\?.*\n\+ ', line) # TODO
 
                 if check_change_sub(line, out_file):
-                    print('Change/Sub')
+                    log('log\\diff_to_sheet.log', 'Change/Sub')
                 elif check_change_add(line, out_file):
-                    print('Change/Add')
+                    log('log\\diff_to_sheet.log', 'Change/Add')
                 elif check_new_line(line, out_file):
-                    print('New Line')
+                    log('log\\diff_to_sheet.log', 'New Line')
                 elif check_deleted_line(line, out_file):
-                    print('Deleted Line')
+                    log('log\\diff_to_sheet.log', 'Deleted Line')
                 elif len(change_sub_split) == 1:
                     if len(line.split('  ')) == 2:
-                        print('No Change')
+                        log('log\\diff_to_sheet.log', 'No Change')
                         out_file.write('No Change,')
                         out_file.write(line.split('  ')[1])
                         out_file.write('\n')
@@ -126,9 +137,11 @@ def diff_to_sheet(csv_diff_path, out_path):
                     # unexpected format in diff
                     csv_diff.close()
                     out_file.close()
-                    print(len(temp))
-                    print(temp)
-                    print(line)
+                    log('log\\diff_to_sheet.log', 'Curious (unexpected diff format)...')
+                    log('log\\diff_to_sheet.log', len(temp))
+                    log('log\\diff_to_sheet.log', temp)
+                    log('log\\diff_to_sheet.log', line)
+                    log('log\\diff_to_sheet.log', '/Curious')
                     return False
             csv_diff.close()
             out_file.close()
@@ -151,20 +164,20 @@ def csv_to_xlsx(csv_path, xlsx_path):
             line_format = change_add_format
             if not len(temp) == 0:
                 if (temp[0][1] == 'Change/Sub'):
-                    print('Change/Sub')
+                    log('log\\csv_to_xlsx.log', 'Change/Sub')
                     line_format = change_sub_format
                 elif (temp[0][1] == 'Change/Add'):
-                    print('Change/Add')
+                    log('log\\csv_to_xlsx.log', 'Change/Add')
                 elif (temp[0][1] == 'New Line'):
-                    print('New Line')
+                    log('log\\csv_to_xlsx.log', 'New Line')
                 elif (temp[0][1] == 'Deleted Line'):
-                    print('Deleted Line')
+                    log('log\\csv_to_xlsx.log', 'Deleted Line')
                     line_format = change_sub_format
                 elif (temp[0][1] == 'No Change'):
-                    print('No Change')
+                    log('log\\csv_to_xlsx.log', 'No Change')
                     line_format = no_change_format
                 else:
-                    print('Curious...')
+                    log('log\\csv_to_xlsx.log', 'Curious...')
             
             for c, col in enumerate(row):
                 worksheet.write(r, c, col, line_format)
@@ -187,16 +200,21 @@ def setup_temp_directories():
     os.mkdir('temp/diff_sheets')
     os.mkdir('temp/csv_diff')
 
+def remove_log_directories():
+    if os.path.exists('log'):
+        shutil.rmtree('log')
+
+def setup_log_directories():
+    remove_log_directories()
+    os.mkdir('log')
+
 def setup_output_directory():
     if not os.path.exists('output'):
         os.mkdir('output')
 
-def path_leaf(path):
-    head, tail = ntpath.split(path)
-    return tail or ntpath.basename(head)
-
 def process_xlsx(lhs_path, rhs_path):
     setup_temp_directories()
+    setup_log_directories()
     setup_output_directory()
 
     left_temp_path = 'temp/lhs'
