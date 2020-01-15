@@ -47,9 +47,10 @@ def csv_diff(csvl, csvr, out_path):
 
 def check_change_sub(line, out_file):
     # TODO(sasiala): change to similar format to new/deleted lines
-    split_lines = re.split('\n\?.*\n\+ ', line)
+    is_change_sub = re.match('\- .*\n\?.*\n\+ .*$', line)
     
-    if len(split_lines) == 2:
+    if is_change_sub:
+        split_lines = re.split('\n\?.*\n\+ ', line)
         first_line = split_lines[0].split('- ')[1].split(',')
         second_line = split_lines[1].split(',')
         iter_size = len(first_line)
@@ -71,9 +72,10 @@ def check_change_sub(line, out_file):
 
 def check_change_add(line, out_file):
     # TODO(sasiala): change to similar format to new/deleted lines
-    split_lines = re.split('\n\?.*$', line)
+    is_change_add = re.match('\- .*\n\+ .*\n\? .*$', line)
 
-    if len(split_lines) == 2:
+    if is_change_add:
+        split_lines = re.split('\n\?.*$', line)
         temp_lines = split_lines[0].split('\n')
         first_line = temp_lines[0].split('- ')[1].split(',')
         second_line = re.split('\+ ', temp_lines[1])[1].split(',')
@@ -143,18 +145,11 @@ def diff_to_sheet(csv_diff_path, out_path):
                         out_file.write('\n')
                 else:
                     # unexpected format in diff
-                    csv_diff.close()
-                    out_file.close()
                     log('log\\diff_to_sheet.log', 'Curious (unexpected diff format)...')
-                    log('log\\diff_to_sheet.log', len(temp))
-                    log('log\\diff_to_sheet.log', temp)
                     log('log\\diff_to_sheet.log', line)
                     log('log\\diff_to_sheet.log', '/Curious')
-                    return False
-            csv_diff.close()
-            out_file.close()
+                    # TODO(sasiala): return False
             return True
-        out_file.close()
         return False
     return False
 
