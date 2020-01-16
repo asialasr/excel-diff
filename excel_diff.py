@@ -96,6 +96,33 @@ def check_change_add(line, out_file):
         return True
     return False
 
+def check_change_add_and_sub(line, out_file):
+    is_add_and_sub = re.match(r'- .*\n\? .*\n\+ .*\n\? .*$', line)
+    
+    if is_add_and_sub:
+        line = line + '\n'
+        lines = re.split(r'\n\? .*[\n|$]', line)
+        print(lines)
+        first_line = lines[0].split('- ')[1].split(',')
+        second_line = lines[1].split('+ ')[1].split(',')
+        iter_size = len(first_line)
+        if (len(first_line) > len(second_line)):
+            iter_size = len(second_line)
+
+        # TODO(sasiala): deal with lines of diff sizes (skipping rest of output, currently)
+        new_list = []
+        for col in range(iter_size):
+            if not first_line[col] == second_line[col]:
+                new_list.append('||'.join([first_line[col], second_line[col]]))
+            else:
+                new_list.append(first_line[col])
+        out_file.write('Change/Add/Sub,')
+        out_file.write(','.join(new_list))
+        out_file.write('\n')
+        return True
+    return False
+
+
 def check_new_line(line, out_file):
     is_new_line = re.match('[\+ .*[\n|$]]+', line)
 
@@ -137,6 +164,8 @@ def diff_to_sheet(csv_diff_path, out_path):
                     log('log\\diff_to_sheet.log', 'New Line')
                 elif check_deleted_line(line, out_file):
                     log('log\\diff_to_sheet.log', 'Deleted Line')
+                elif check_change_add_and_sub(line, out_file):
+                    log('log\\diff_to_sheet.log', 'Change/Add/Sub')
                 elif len(change_sub_split) == 1:
                     if len(line.split('  ')) == 2:
                         log('log\\diff_to_sheet.log', 'No Change')
@@ -159,6 +188,7 @@ def csv_to_xlsx(csv_path, xlsx_path):
     worksheet = workbook.add_worksheet()
     change_add_format = workbook.add_format({'bold':True, 'bg_color':'green'})
     change_sub_format = workbook.add_format({'bold':True, 'bg_color':'red'})
+    change_add_sub_format = workbook.add_format({'bold':True, 'bg_color':'pink'})
     no_change_format = workbook.add_format()
     with open(csv_path, 'r') as csv_file:
         csv_reader = csv.reader(csv_file)
@@ -171,6 +201,9 @@ def csv_to_xlsx(csv_path, xlsx_path):
                     line_format = change_sub_format
                 elif (temp[0][1] == 'Change/Add'):
                     log('log\\csv_to_xlsx.log', 'Change/Add')
+                elif (temp[0][1] == 'Change/Add/Sub'):
+                    log('log\\csv_to_xlsx.log', 'Change/Add/Sub')
+                    line_format = change_add_sub_format
                 elif (temp[0][1] == 'New Line'):
                     log('log\\csv_to_xlsx.log', 'New Line')
                 elif (temp[0][1] == 'Deleted Line'):
