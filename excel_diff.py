@@ -136,6 +136,7 @@ def check_new_line(line, out_file):
         return True
     return False
 
+# TODO(sasiala): deleted & new line seem poorly tested.
 def check_deleted_line(line, out_file):
     is_deleted_line = re.match('[- .*[\n|$]]+', line)
 
@@ -146,6 +147,37 @@ def check_deleted_line(line, out_file):
                 out_file.write('Deleted Line,')
                 out_file.write(re.split('- ', i)[1])
                 out_file.write('\n')
+        return True
+    return False
+
+def check_compound(line, out_file):
+    line = line.split('\n')
+    left_over = line
+    if (len(line) >= 4):
+        # TODO(sasiala): am I sure these can't be in the middle of the string?
+        if (check_change_add_and_sub('\n'.join(line[0:4]), out_file)):
+            left_over = line[4:]
+            log('log\\diff_to_sheet.log', 'Compound:Change/Add/Sub')
+        elif (check_change_add('\n'.join(line[0:3]), out_file)):
+            left_over = line[3:]
+            log('log\\diff_to_sheet.log', 'Compound:Change/Add')
+        elif (check_change_sub('\n'.join(line[0:3]), out_file)):
+            left_over = line[3:]
+            log('log\\diff_to_sheet.log', 'Compound:Change/Sub')
+        
+        for i in left_over:
+            if (check_new_line(i, out_file)):
+                log('log\\diff_to_sheet.log', 'Compound:New Line')
+            elif (check_deleted_line(i, out_file)):
+                log('log\\diff_to_sheet.log', 'Compound:Deleted Line')
+            elif re.match('- $', i) or re.match('\+ $', i):
+                log('log\\diff_to_sheet.log', 'Compound:Skipped empty +/- line')
+            else:
+                # unexpected format in diff
+                log('log\\diff_to_sheet.log', 'Compound:Curious (unexpected diff format)...')
+                log('log\\diff_to_sheet.log', i)
+                log('log\\diff_to_sheet.log', '/Curious')
+                # TODO(sasiala): return False
         return True
     return False
 
@@ -166,6 +198,8 @@ def diff_to_sheet(csv_diff_path, out_path):
                     log('log\\diff_to_sheet.log', 'Deleted Line')
                 elif check_change_add_and_sub(line, out_file):
                     log('log\\diff_to_sheet.log', 'Change/Add/Sub')
+                elif check_compound(line, out_file):
+                    log('log\\diff_to_sheet.log', 'Compound')
                 elif len(change_sub_split) == 1:
                     if len(line.split('  ')) == 2:
                         log('log\\diff_to_sheet.log', 'No Change')
