@@ -1,0 +1,4 @@
+# ignore all intermediate or output folders
+log/*
+output/*
+temp/*
