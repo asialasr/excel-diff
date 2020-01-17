@@ -12,13 +12,18 @@ import glob
 import ntpath
 import argparse
 
+LOG_FOLDER='log'
+TEMP_FOLDER='temp'
+OUTPUT_FOLDER='output'
+
 def path_leaf(path):
     head, tail = ntpath.split(path)
     return tail or ntpath.basename(head)
 
 def log(log_path, message):
-    with open('log\\combined.log', 'a+') as combined_log:
-        with open(log_path, 'a+') as log_file:
+    COMBINED_LOG_FILE='combined.log'
+    with open(LOG_FOLDER + '\\' + COMBINED_LOG_FILE, 'a+') as combined_log:
+        with open(LOG_FOLDER + '\\' + log_path, 'a+') as log_file:
             log_file.write(message + '\n')
             combined_log.write(path_leaf(log_path) + ': ' + message + '\n')
 
@@ -156,26 +161,26 @@ def check_compound(line, out_file):
         # TODO(sasiala): am I sure these can't be in the middle of the string?
         if (check_change_add_and_sub('\n'.join(line[0:4]), out_file)):
             left_over = line[4:]
-            log('log\\diff_to_sheet.log', 'Compound:Change/Add/Sub')
+            log('diff_to_sheet.log', 'Compound:Change/Add/Sub')
         elif (check_change_add('\n'.join(line[0:3]), out_file)):
             left_over = line[3:]
-            log('log\\diff_to_sheet.log', 'Compound:Change/Add')
+            log('diff_to_sheet.log', 'Compound:Change/Add')
         elif (check_change_sub('\n'.join(line[0:3]), out_file)):
             left_over = line[3:]
-            log('log\\diff_to_sheet.log', 'Compound:Change/Sub')
+            log('diff_to_sheet.log', 'Compound:Change/Sub')
         
         for i in left_over:
             if (check_new_line(i, out_file)):
-                log('log\\diff_to_sheet.log', 'Compound:New Line')
+                log('diff_to_sheet.log', 'Compound:New Line')
             elif (check_deleted_line(i, out_file)):
-                log('log\\diff_to_sheet.log', 'Compound:Deleted Line')
+                log('diff_to_sheet.log', 'Compound:Deleted Line')
             elif re.match('- $', i) or re.match('\+ $', i):
-                log('log\\diff_to_sheet.log', 'Compound:Skipped empty +/- line')
+                log('diff_to_sheet.log', 'Compound:Skipped empty +/- line')
             else:
                 # unexpected format in diff
-                log('log\\diff_to_sheet.log', 'Compound:Curious (unexpected diff format)...')
-                log('log\\diff_to_sheet.log', i)
-                log('log\\diff_to_sheet.log', '/Curious')
+                log('diff_to_sheet.log', 'Compound:Curious (unexpected diff format)...')
+                log('diff_to_sheet.log', i)
+                log('diff_to_sheet.log', '/Curious')
                 # TODO(sasiala): return False
         return True
     return False
@@ -188,24 +193,24 @@ def diff_to_sheet(csv_diff_path, out_path):
                 change_sub_split = re.split('\n\?.*\n\+ ', line) # TODO
 
                 if check_change_sub(line, out_file):
-                    log('log\\diff_to_sheet.log', 'Change/Sub')
+                    log('diff_to_sheet.log', 'Change/Sub')
                 elif check_change_add(line, out_file):
-                    log('log\\diff_to_sheet.log', 'Change/Add')
+                    log('diff_to_sheet.log', 'Change/Add')
                 elif check_change_add_and_sub(line, out_file):
-                    log('log\\diff_to_sheet.log', 'Change/Add/Sub')
+                    log('diff_to_sheet.log', 'Change/Add/Sub')
                 elif check_compound(line, out_file):
-                    log('log\\diff_to_sheet.log', 'Compound')
+                    log('diff_to_sheet.log', 'Compound')
                 elif len(change_sub_split) == 1:
                     if len(line.split('  ')) == 2:
-                        log('log\\diff_to_sheet.log', 'No Change')
+                        log('diff_to_sheet.log', 'No Change')
                         out_file.write('No Change,')
                         out_file.write(line.split('  ')[1])
                         out_file.write('\n')
                 else:
                     # unexpected format in diff
-                    log('log\\diff_to_sheet.log', 'Curious (unexpected diff format)...')
-                    log('log\\diff_to_sheet.log', line)
-                    log('log\\diff_to_sheet.log', '/Curious')
+                    log('diff_to_sheet.log', 'Curious (unexpected diff format)...')
+                    log('diff_to_sheet.log', line)
+                    log('diff_to_sheet.log', '/Curious')
                     # TODO(sasiala): return False
             return True
         return False
@@ -226,23 +231,23 @@ def csv_to_xlsx(csv_path, xlsx_path):
             line_format = change_add_format
             if not len(temp) == 0:
                 if (temp[0][1] == 'Change/Sub'):
-                    log('log\\csv_to_xlsx.log', 'Change/Sub')
+                    log('csv_to_xlsx.log', 'Change/Sub')
                     line_format = change_sub_format
                 elif (temp[0][1] == 'Change/Add'):
-                    log('log\\csv_to_xlsx.log', 'Change/Add')
+                    log('csv_to_xlsx.log', 'Change/Add')
                 elif (temp[0][1] == 'Change/Add/Sub'):
-                    log('log\\csv_to_xlsx.log', 'Change/Add/Sub')
+                    log('csv_to_xlsx.log', 'Change/Add/Sub')
                     line_format = change_add_sub_format
                 elif (temp[0][1] == 'New Line'):
-                    log('log\\csv_to_xlsx.log', 'New Line')
+                    log('csv_to_xlsx.log', 'New Line')
                 elif (temp[0][1] == 'Deleted Line'):
-                    log('log\\csv_to_xlsx.log', 'Deleted Line')
+                    log('csv_to_xlsx.log', 'Deleted Line')
                     line_format = change_sub_format
                 elif (temp[0][1] == 'No Change'):
-                    log('log\\csv_to_xlsx.log', 'No Change')
+                    log('csv_to_xlsx.log', 'No Change')
                     line_format = no_change_format
                 else:
-                    log('log\\csv_to_xlsx.log', 'Curious...')
+                    log('csv_to_xlsx.log', 'Curious...')
             
             for c, col in enumerate(row):
                 worksheet.write(r, c, col, line_format)
@@ -253,37 +258,37 @@ def csv_to_xlsx(csv_path, xlsx_path):
     return False
 
 def remove_temp_directories():
-    if os.path.exists('temp'):
-        shutil.rmtree('temp')
+    if os.path.exists(TEMP_FOLDER):
+        shutil.rmtree(TEMP_FOLDER)
 
 def setup_temp_directories():
     remove_temp_directories()
 
-    os.mkdir('temp')
-    os.mkdir('temp/lhs')
-    os.mkdir('temp/rhs')
-    os.mkdir('temp/diff_sheets')
-    os.mkdir('temp/csv_diff')
+    os.mkdir(TEMP_FOLDER)
+    os.mkdir(TEMP_FOLDER + '/lhs')
+    os.mkdir(TEMP_FOLDER + '/rhs')
+    os.mkdir(TEMP_FOLDER + '/diff_sheets')
+    os.mkdir(TEMP_FOLDER + '/csv_diff')
 
 def remove_log_directories():
-    if os.path.exists('log'):
-        shutil.rmtree('log')
+    if os.path.exists(LOG_FOLDER):
+        shutil.rmtree(LOG_FOLDER)
 
 def setup_log_directories():
     remove_log_directories()
-    os.mkdir('log')
+    os.mkdir(LOG_FOLDER)
 
 def setup_output_directory():
-    if not os.path.exists('output'):
-        os.mkdir('output')
+    if not os.path.exists(OUTPUT_FOLDER):
+        os.mkdir(OUTPUT_FOLDER)
 
 def process_xlsx(lhs_path, rhs_path):
     setup_temp_directories()
     setup_log_directories()
     setup_output_directory()
 
-    left_temp_path = 'temp/lhs'
-    right_temp_path = 'temp/rhs'
+    left_temp_path = TEMP_FOLDER + '/lhs'
+    right_temp_path = TEMP_FOLDER + '/rhs'
     with xlrd.open_workbook(lhs_path) as xlsx_file:
         for sheet_num in range(xlsx_file.nsheets):
             # TODO(sasiala): match sheets up so that diff is complete
@@ -300,18 +305,18 @@ def process_xlsx(lhs_path, rhs_path):
                 print("Sheet to csv failed (right)")
                 return False
     
-    temp_lhs_sheets = glob.glob('temp/lhs/sheet_*.csv')
+    temp_lhs_sheets = glob.glob(TEMP_FOLDER + '/lhs/sheet_*.csv')
     lhs_filenames = [path_leaf(i) for i in temp_lhs_sheets]
-    temp_rhs_sheets = glob.glob('temp/rhs/sheet_*.csv')
+    temp_rhs_sheets = glob.glob(TEMP_FOLDER + '/rhs/sheet_*.csv')
     rhs_filenames = [path_leaf(i) for i in temp_rhs_sheets]
 
-    if not csv_diff('temp/lhs/sheet_0.csv', 'temp/rhs/sheet_0.csv', 'temp/csv_diff/sheet_0.diff'):
+    if not csv_diff(TEMP_FOLDER + '/lhs/sheet_0.csv', TEMP_FOLDER + '/rhs/sheet_0.csv', TEMP_FOLDER + '/csv_diff/sheet_0.diff'):
         print("Csv diff failed")
         return False
-    if not diff_to_sheet('temp/csv_diff/sheet_0.diff', 'temp/diff_sheets/sheet_0.csv'):
+    if not diff_to_sheet(TEMP_FOLDER + '/csv_diff/sheet_0.diff', TEMP_FOLDER + '/diff_sheets/sheet_0.csv'):
         print("Diff to sheet failed")
         return False
-    if not csv_to_xlsx('temp/diff_sheets/sheet_0.csv', 'output/final_out.xlsx'):
+    if not csv_to_xlsx(TEMP_FOLDER + '/diff_sheets/sheet_0.csv', OUTPUT_FOLDER + '/final_out.xlsx'):
         print("CSV to XLSX failed")
         return False
 
