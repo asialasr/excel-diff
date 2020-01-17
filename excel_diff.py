@@ -103,7 +103,6 @@ def check_change_add_and_sub(line, out_file):
     if is_add_and_sub:
         line = line + '\n'
         lines = re.split(r'\n\? .*[\n|$]', line)
-        print(lines)
         first_line = lines[0].split('- ')[1].split(',')
         second_line = lines[1].split('+ ')[1].split(',')
         iter_size = len(first_line)
@@ -125,7 +124,7 @@ def check_change_add_and_sub(line, out_file):
 
 
 def check_new_line(line, out_file):
-    is_new_line = re.match('[\+ .*[\n|$]]+', line)
+    is_new_line = re.match('\+ .*$', line)
 
     if is_new_line:
         split_lines = line.split('\n')
@@ -137,9 +136,8 @@ def check_new_line(line, out_file):
         return True
     return False
 
-# TODO(sasiala): deleted & new line seem poorly tested.
 def check_deleted_line(line, out_file):
-    is_deleted_line = re.match('[- .*[\n|$]]+', line)
+    is_deleted_line = re.match('^- .*$', line)
 
     if is_deleted_line:
         split_lines = line.split('\n')
@@ -193,10 +191,6 @@ def diff_to_sheet(csv_diff_path, out_path):
                     log('log\\diff_to_sheet.log', 'Change/Sub')
                 elif check_change_add(line, out_file):
                     log('log\\diff_to_sheet.log', 'Change/Add')
-                elif check_new_line(line, out_file):
-                    log('log\\diff_to_sheet.log', 'New Line')
-                elif check_deleted_line(line, out_file):
-                    log('log\\diff_to_sheet.log', 'Deleted Line')
                 elif check_change_add_and_sub(line, out_file):
                     log('log\\diff_to_sheet.log', 'Change/Add/Sub')
                 elif check_compound(line, out_file):
@@ -306,13 +300,10 @@ def process_xlsx(lhs_path, rhs_path):
                 print("Sheet to csv failed (right)")
                 return False
     
-    # TODO(sasiala): automate diffs with glob
     temp_lhs_sheets = glob.glob('temp/lhs/sheet_*.csv')
     lhs_filenames = [path_leaf(i) for i in temp_lhs_sheets]
     temp_rhs_sheets = glob.glob('temp/rhs/sheet_*.csv')
     rhs_filenames = [path_leaf(i) for i in temp_rhs_sheets]
-    print(lhs_filenames)
-    print(rhs_filenames)
 
     if not csv_diff('temp/lhs/sheet_0.csv', 'temp/rhs/sheet_0.csv', 'temp/csv_diff/sheet_0.diff'):
         print("Csv diff failed")
