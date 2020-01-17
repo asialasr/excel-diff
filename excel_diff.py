@@ -57,7 +57,7 @@ def check_change_sub(line, out_file):
     
     if is_change_sub:
         split_lines = re.split('\n\?.*\n\+ ', line)
-        first_line = split_lines[0].split('- ')[1].split(',')
+        first_line = re.sub('^- ', '', split_lines[0]).split(',')
         second_line = split_lines[1].split(',')
         iter_size = len(first_line)
         if (len(first_line) > len(second_line)):
@@ -83,8 +83,8 @@ def check_change_add(line, out_file):
     if is_change_add:
         split_lines = re.split('\n\?.*$', line)
         temp_lines = split_lines[0].split('\n')
-        first_line = temp_lines[0].split('- ')[1].split(',')
-        second_line = re.split('\+ ', temp_lines[1])[1].split(',')
+        first_line = re.sub('^- ', '', temp_lines[0]).split(',')
+        second_line = re.sub('^\+ ', '', temp_lines[1]).split(',')
         iter_size = len(first_line)
         if (len(first_line) > len(second_line)):
             iter_size = len(second_line)
@@ -108,8 +108,9 @@ def check_change_add_and_sub(line, out_file):
     if is_add_and_sub:
         line = line + '\n'
         lines = re.split(r'\n\? .*[\n|$]', line)
-        first_line = lines[0].split('- ')[1].split(',')
-        second_line = lines[1].split('+ ')[1].split(',')
+        # TODO(sasiala): split on "," or similar, instead of , (need to think about strings w/ comma)
+        first_line = re.sub('^- ', '', lines[0]).split(',')
+        second_line = re.sub('^\+ ', '', lines[1]).split(',')
         iter_size = len(first_line)
         if (len(first_line) > len(second_line)):
             iter_size = len(second_line)
@@ -149,7 +150,7 @@ def check_deleted_line(line, out_file):
         for i in split_lines:
             if not re.match('- $', i):
                 out_file.write('Deleted Line,')
-                out_file.write(re.split('- ', i)[1])
+                out_file.write(re.sub('^- ', '', i))
                 out_file.write('\n')
         return True
     return False
