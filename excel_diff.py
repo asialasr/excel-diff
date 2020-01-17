@@ -10,6 +10,7 @@ import os # mkdir, path.exists
 import shutil # rmtree
 import glob
 import ntpath
+import argparse
 
 def path_leaf(path):
     head, tail = ntpath.split(path)
@@ -328,7 +329,12 @@ def process_xlsx(lhs_path, rhs_path):
     return True
 
 def main():
-    process_xlsx("tests\\test_xlsx_l.xlsx", 'tests/test_xlsx_2.xlsx')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('lhspath')
+    parser.add_argument('rhspath')
+    args = parser.parse_args()
+    
+    process_xlsx(args.lhspath, args.rhspath)
 
 if __name__ == "__main__":
     # execute only if run as a script
