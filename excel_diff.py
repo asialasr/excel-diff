@@ -53,7 +53,7 @@ def csv_diff(csvl, csvr, out_path):
 
 def check_change_sub(line, out_file):
     # TODO(sasiala): change to similar format to new/deleted lines
-    is_change_sub = re.match('\- .*\n\?.*\n\+ .*$', line)
+    is_change_sub = re.match('^\- .*\n\?.*\n\+ .*$', line)
     
     if is_change_sub:
         split_lines = re.split('\n\?.*\n\+ ', line)
@@ -78,7 +78,7 @@ def check_change_sub(line, out_file):
 
 def check_change_add(line, out_file):
     # TODO(sasiala): change to similar format to new/deleted lines
-    is_change_add = re.match('\- .*\n\+ .*\n\? .*$', line)
+    is_change_add = re.match('^- .*\n\+ .*\n\? .*$', line)
 
     if is_change_add:
         split_lines = re.split('\n\?.*$', line)
@@ -103,11 +103,11 @@ def check_change_add(line, out_file):
     return False
 
 def check_change_add_and_sub(line, out_file):
-    is_add_and_sub = re.match(r'- .*\n\? .*\n\+ .*\n\? .*$', line)
+    is_add_and_sub = re.match('^- .*\n\? .*\n\+ .*\n\? .*$', line)
     
     if is_add_and_sub:
         line = line + '\n'
-        lines = re.split(r'\n\? .*[\n|$]', line)
+        lines = re.split('\n\? .*[\n|$]', line)
         # TODO(sasiala): split on "," or similar, instead of , (need to think about strings w/ comma)
         first_line = re.sub('^- ', '', lines[0]).split(',')
         second_line = re.sub('^\+ ', '', lines[1]).split(',')
@@ -135,9 +135,9 @@ def check_new_line(line, out_file):
     if is_new_line:
         split_lines = line.split('\n')
         for i in split_lines:
-            if not re.match('\+ $', i):
+            if not re.match('^\+ $', i):
                 out_file.write('New Line,')
-                out_file.write(re.split('+ ', i)[1])
+                out_file.write(re.sub('^\+ ', '', i))
                 out_file.write('\n')
         return True
     return False
@@ -148,7 +148,7 @@ def check_deleted_line(line, out_file):
     if is_deleted_line:
         split_lines = line.split('\n')
         for i in split_lines:
-            if not re.match('- $', i):
+            if not re.match('^- $', i):
                 out_file.write('Deleted Line,')
                 out_file.write(re.sub('^- ', '', i))
                 out_file.write('\n')
@@ -175,7 +175,7 @@ def check_compound(line, out_file):
                 log('diff_to_sheet.log', 'Compound:New Line')
             elif (check_deleted_line(i, out_file)):
                 log('diff_to_sheet.log', 'Compound:Deleted Line')
-            elif re.match('- $', i) or re.match('\+ $', i):
+            elif re.match('- $', i) or re.match('^\+ $', i):
                 log('diff_to_sheet.log', 'Compound:Skipped empty +/- line')
             else:
                 # unexpected format in diff
