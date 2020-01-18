@@ -89,15 +89,17 @@ def process_xlsx(lhs_path, rhs_path):
     temp_rhs_sheets = glob.glob(TEMP_FOLDER + '/rhs/sheet_*.csv')
     rhs_filenames = [path_leaf(i) for i in temp_rhs_sheets]
 
-    if not csv_diff(TEMP_FOLDER + '/lhs/sheet_0.csv', TEMP_FOLDER + '/rhs/sheet_0.csv', TEMP_FOLDER + '/csv_diff/sheet_0.diff'):
-        print("Csv diff failed")
-        return False
-    if not cdts.diff_to_sheet(TEMP_FOLDER + '/csv_diff/sheet_0.diff', TEMP_FOLDER + '/diff_sheets/sheet_0.csv'):
-        print("Diff to sheet failed")
-        return False
-    if not sdtx.csv_to_sheet(TEMP_FOLDER + '/diff_sheets/sheet_0.csv', OUTPUT_FOLDER + '/final_out.xlsx'):
-        print("CSV to Sheet failed")
-        return False
+    # TODO(sasiala): this doesn't account for missing sheets in one book
+    for i in range(len(lhs_filenames)):
+        if not csv_diff(f'{TEMP_FOLDER}/lhs/{lhs_filenames[i]}', f'{TEMP_FOLDER}/rhs/{rhs_filenames[i]}', f'{TEMP_FOLDER}/csv_diff/sheet_{i}.diff'):
+            print("Csv diff failed")
+            return False
+        if not cdts.diff_to_sheet(f'{TEMP_FOLDER}/csv_diff/sheet_{i}.diff', f'{TEMP_FOLDER}/diff_sheets/sheet_{i}.csv'):
+            print("Diff to sheet failed")
+            return False
+        if not sdtx.csv_to_sheet(f'{TEMP_FOLDER}/diff_sheets/sheet_{i}.csv', f'{OUTPUT_FOLDER}/final_out_{i}.xlsx'):
+            print("CSV to Sheet failed")
+            return False
 
     # TODO(sasiala): remove temp directories, also remove at other returns
     # remove_temp_directories()
