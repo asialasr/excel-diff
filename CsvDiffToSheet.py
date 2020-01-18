@@ -82,7 +82,7 @@ def check_change_add_and_sub(line, out_file):
         return True
     return False
 
-
+# TODO(sasiala): new line is broken
 def check_new_line(line, out_file):
     is_new_line = re.match('\+ .*$', line)
 
