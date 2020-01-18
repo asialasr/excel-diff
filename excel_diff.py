@@ -4,7 +4,6 @@ __copyright__ = "Copyright (C) 2020 Sean Asiala"
 import xlrd
 import csv
 import difflib
-import xlsxwriter
 import os # mkdir, path.exists
 import shutil # rmtree
 import glob
@@ -12,6 +11,7 @@ import ntpath
 import argparse
 import logger
 import CsvDiffToSheet as cdts
+import SheetDiffToXlsx as sdtx
 
 TEMP_FOLDER='temp'
 OUTPUT_FOLDER='output'
@@ -41,47 +41,6 @@ def csv_diff(csvl, csvr, out_path):
             diff_file.writelines(line)
         diff_file.close()
         return True
-    return False
-
-def csv_to_xlsx(csv_path, xlsx_path):
-    # TODO(sasiala): convert to only add sheets in this function
-    workbook = xlsxwriter.Workbook(xlsx_path)
-    worksheet = workbook.add_worksheet()
-    change_add_format = workbook.add_format({'bold':True, 'bg_color':'green'})
-    change_sub_format = workbook.add_format({'bold':True, 'bg_color':'red'})
-    change_add_sub_format = workbook.add_format({'bold':True, 'bg_color':'pink'})
-    no_change_format = workbook.add_format()
-    with open(csv_path, 'r') as csv_file:
-        csv_reader = csv.reader(csv_file)
-        for r, row in enumerate(csv_reader):
-            temp = list(enumerate(row))
-            line_format = change_add_format
-            if not len(temp) == 0:
-                if (temp[0][1] == 'Change/Sub'):
-                    logger.log('csv_to_xlsx.log', 'Change/Sub')
-                    line_format = change_sub_format
-                elif (temp[0][1] == 'Change/Add'):
-                    logger.log('csv_to_xlsx.log', 'Change/Add')
-                elif (temp[0][1] == 'Change/Add/Sub'):
-                    logger.log('csv_to_xlsx.log', 'Change/Add/Sub')
-                    line_format = change_add_sub_format
-                elif (temp[0][1] == 'New Line'):
-                    logger.log('csv_to_xlsx.log', 'New Line')
-                elif (temp[0][1] == 'Deleted Line'):
-                    logger.log('csv_to_xlsx.log', 'Deleted Line')
-                    line_format = change_sub_format
-                elif (temp[0][1] == 'No Change'):
-                    logger.log('csv_to_xlsx.log', 'No Change')
-                    line_format = no_change_format
-                else:
-                    logger.log('csv_to_xlsx.log', 'Curious...')
-            
-            for c, col in enumerate(row):
-                worksheet.write(r, c, col, line_format)
-                
-        workbook.close()
-        return True
-    workbook.close()
     return False
 
 def remove_temp_directories():
@@ -135,8 +94,8 @@ def process_xlsx(lhs_path, rhs_path):
     if not cdts.diff_to_sheet(TEMP_FOLDER + '/csv_diff/sheet_0.diff', TEMP_FOLDER + '/diff_sheets/sheet_0.csv'):
         print("Diff to sheet failed")
         return False
-    if not csv_to_xlsx(TEMP_FOLDER + '/diff_sheets/sheet_0.csv', OUTPUT_FOLDER + '/final_out.xlsx'):
-        print("CSV to XLSX failed")
+    if not sdtx.csv_to_sheet(TEMP_FOLDER + '/diff_sheets/sheet_0.csv', OUTPUT_FOLDER + '/final_out.xlsx'):
+        print("CSV to Sheet failed")
         return False
 
     # TODO(sasiala): remove temp directories, also remove at other returns
