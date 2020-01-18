@@ -1,3 +1,6 @@
+__author__ = "Sean Asiala"
+__copyright__ = "Copyright (C) 2020 Sean Asiala"
+
 import os
 import ntpath
 import shutil
