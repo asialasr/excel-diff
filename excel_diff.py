@@ -63,6 +63,7 @@ def setup_output_directory():
 def process_xlsx(lhs_path, rhs_path):
     setup_temp_directories()
     logger.initialize_directory_structure()
+    logger.set_log_level(logger.LogLevel.DEBUG)
     setup_output_directory()
 
     left_temp_path = TEMP_FOLDER + '/lhs'
@@ -108,6 +109,7 @@ def main():
     parser.add_argument('rhspath')
     args = parser.parse_args()
     
+    # TODO(sasiala): add logging command line option
     process_xlsx(args.lhspath, args.rhspath)
 
 if __name__ == "__main__":
