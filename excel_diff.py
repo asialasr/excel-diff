@@ -100,6 +100,8 @@ def process_xlsx(lhs_path, rhs_path):
         if not sdtx.csv_to_sheet(f'{TEMP_FOLDER}/diff_sheets/sheet_{i}.csv', f'{OUTPUT_FOLDER}/final_out_{i}.xlsx'):
             print("CSV to Sheet failed")
             return False
+    
+    # TODO(sasiala): change to merging sheets into new workbook, instead of outputting separate workbooks
 
     # TODO(sasiala): remove temp directories, also remove at other returns
     # remove_temp_directories()
