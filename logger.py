@@ -6,6 +6,7 @@ import ntpath
 import shutil
 from enum import Enum
 
+# TODO(sasiala): re-implement logging using the logging module
 class LogLevel(Enum):
         NONE=0
         FATAL=NONE+1

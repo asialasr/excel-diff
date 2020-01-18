@@ -109,6 +109,7 @@ def main():
     parser.add_argument('rhspath')
     args = parser.parse_args()
     
+    # TODO(sasiala): add logging command line option
     process_xlsx(args.lhspath, args.rhspath)
 
 if __name__ == "__main__":
