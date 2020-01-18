@@ -116,26 +116,26 @@ def check_compound(line, out_file):
         # TODO(sasiala): am I sure these can't be in the middle of the string?
         if (check_change_add_and_sub('\n'.join(line[0:4]), out_file)):
             left_over = line[4:]
-            logger.log('diff_to_sheet.log', 'Compound:Change/Add/Sub')
+            logger.log('diff_to_sheet.log', 'Compound:Change/Add/Sub', logger.LogLevel.DEBUG)
         elif (check_change_add('\n'.join(line[0:3]), out_file)):
             left_over = line[3:]
-            logger.log('diff_to_sheet.log', 'Compound:Change/Add')
+            logger.log('diff_to_sheet.log', 'Compound:Change/Add', logger.LogLevel.DEBUG)
         elif (check_change_sub('\n'.join(line[0:3]), out_file)):
             left_over = line[3:]
-            logger.log('diff_to_sheet.log', 'Compound:Change/Sub')
+            logger.log('diff_to_sheet.log', 'Compound:Change/Sub', logger.LogLevel.DEBUG)
         
         for i in left_over:
             if (check_new_line(i, out_file)):
-                logger.log('diff_to_sheet.log', 'Compound:New Line')
+                logger.log('diff_to_sheet.log', 'Compound:New Line', logger.LogLevel.DEBUG)
             elif (check_deleted_line(i, out_file)):
-                logger.log('diff_to_sheet.log', 'Compound:Deleted Line')
+                logger.log('diff_to_sheet.log', 'Compound:Deleted Line', logger.LogLevel.DEBUG)
             elif re.match('- $', i) or re.match('^\+ $', i):
-                logger.log('diff_to_sheet.log', 'Compound:Skipped empty +/- line')
+                logger.log('diff_to_sheet.log', 'Compound:Skipped empty +/- line', logger.LogLevel.DEBUG)
             else:
                 # unexpected format in diff
-                logger.log('diff_to_sheet.log', 'Compound:Curious (unexpected diff format)...')
-                logger.log('diff_to_sheet.log', i)
-                logger.log('diff_to_sheet.log', '/Curious')
+                logger.log('diff_to_sheet.log', 'Compound:Curious (unexpected diff format)...', logger.LogLevel.ERROR)
+                logger.log('diff_to_sheet.log', i, logger.LogLevel.ERROR)
+                logger.log('diff_to_sheet.log', '/Curious', logger.LogLevel.ERROR)
                 # TODO(sasiala): return False
         return True
     return False
@@ -148,24 +148,24 @@ def diff_to_sheet(csv_diff_path, out_path):
                 change_sub_split = re.split('\n\?.*\n\+ ', line) # TODO
 
                 if check_change_sub(line, out_file):
-                    logger.log('diff_to_sheet.log', 'Change/Sub')
+                    logger.log('diff_to_sheet.log', 'Change/Sub', logger.LogLevel.DEBUG)
                 elif check_change_add(line, out_file):
-                    logger.log('diff_to_sheet.log', 'Change/Add')
+                    logger.log('diff_to_sheet.log', 'Change/Add', logger.LogLevel.DEBUG)
                 elif check_change_add_and_sub(line, out_file):
-                    logger.log('diff_to_sheet.log', 'Change/Add/Sub')
+                    logger.log('diff_to_sheet.log', 'Change/Add/Sub', logger.LogLevel.DEBUG)
                 elif check_compound(line, out_file):
-                    logger.log('diff_to_sheet.log', 'Compound')
+                    logger.log('diff_to_sheet.log', 'Compound', logger.LogLevel.DEBUG)
                 elif len(change_sub_split) == 1:
                     if len(line.split('  ')) == 2:
-                        logger.log('diff_to_sheet.log', 'No Change')
+                        logger.log('diff_to_sheet.log', 'No Change', logger.LogLevel.DEBUG)
                         out_file.write('No Change,')
                         out_file.write(line.split('  ')[1])
                         out_file.write('\n')
                 else:
                     # unexpected format in diff
-                    logger.log('diff_to_sheet.log', 'Curious (unexpected diff format)...')
-                    logger.log('diff_to_sheet.log', line)
-                    logger.log('diff_to_sheet.log', '/Curious')
+                    logger.log('diff_to_sheet.log', 'Curious (unexpected diff format)...', logger.LogLevel.ERROR)
+                    logger.log('diff_to_sheet.log', line, logger.LogLevel.ERROR)
+                    logger.log('diff_to_sheet.log', '/Curious', logger.LogLevel.ERROR)
                     # TODO(sasiala): return False
             return True
         return False

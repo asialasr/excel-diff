@@ -22,23 +22,23 @@ def csv_to_sheet(csv_path, xlsx_path):
             line_format = change_add_format
             if not len(temp) == 0:
                 if (temp[0][1] == 'Change/Sub'):
-                    logger.log('csv_to_xlsx.log', 'Change/Sub')
+                    logger.log('csv_to_xlsx.log', 'Change/Sub', logger.LogLevel.DEBUG)
                     line_format = change_sub_format
                 elif (temp[0][1] == 'Change/Add'):
-                    logger.log('csv_to_xlsx.log', 'Change/Add')
+                    logger.log('csv_to_xlsx.log', 'Change/Add', logger.LogLevel.DEBUG)
                 elif (temp[0][1] == 'Change/Add/Sub'):
-                    logger.log('csv_to_xlsx.log', 'Change/Add/Sub')
+                    logger.log('csv_to_xlsx.log', 'Change/Add/Sub', logger.LogLevel.DEBUG)
                     line_format = change_add_sub_format
                 elif (temp[0][1] == 'New Line'):
-                    logger.log('csv_to_xlsx.log', 'New Line')
+                    logger.log('csv_to_xlsx.log', 'New Line', logger.LogLevel.DEBUG)
                 elif (temp[0][1] == 'Deleted Line'):
-                    logger.log('csv_to_xlsx.log', 'Deleted Line')
+                    logger.log('csv_to_xlsx.log', 'Deleted Line', logger.LogLevel.DEBUG)
                     line_format = change_sub_format
                 elif (temp[0][1] == 'No Change'):
-                    logger.log('csv_to_xlsx.log', 'No Change')
+                    logger.log('csv_to_xlsx.log', 'No Change', logger.LogLevel.DEBUG)
                     line_format = no_change_format
                 else:
-                    logger.log('csv_to_xlsx.log', 'Curious...')
+                    logger.log('csv_to_xlsx.log', 'Curious...', logger.LogLevel.ERROR)
             
             for c, col in enumerate(row):
                 worksheet.write(r, c, col, line_format)
