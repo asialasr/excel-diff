@@ -60,6 +60,15 @@ def setup_output_directory():
     if not os.path.exists(OUTPUT_FOLDER):
         os.mkdir(OUTPUT_FOLDER)
 
+def generate_csvs_for_xlsx(xlsx_path, temp_path):
+    with xlrd.open_workbook(xlsx_path) as xlsx_file:
+        for sheet_num in range(xlsx_file.nsheets):
+            # TODO(sasiala): match sheets up so that diff is complete
+            sheet_path = f'{temp_path}/sheet_{str(sheet_num)}.csv'
+            if not sheet_to_csv(xlsx_file.sheet_by_index(sheet_num), sheet_path):
+                print(f'Sheet to csv failed on {sheet_path}')
+                return False
+
 def process_xlsx(lhs_path, rhs_path):
     setup_temp_directories()
     logger.initialize_directory_structure()
@@ -68,21 +77,8 @@ def process_xlsx(lhs_path, rhs_path):
 
     left_temp_path = TEMP_FOLDER + '/lhs'
     right_temp_path = TEMP_FOLDER + '/rhs'
-    with xlrd.open_workbook(lhs_path) as xlsx_file:
-        for sheet_num in range(xlsx_file.nsheets):
-            # TODO(sasiala): match sheets up so that diff is complete
-            sheet_path = left_temp_path + '/sheet_' + str(sheet_num) + '.csv'
-            if not sheet_to_csv(xlsx_file.sheet_by_index(sheet_num), sheet_path):
-                print("Sheet to csv failed")
-                return False
-
-    with xlrd.open_workbook(rhs_path) as xlsx_file:
-        for sheet_num in range(xlsx_file.nsheets):
-            # TODO(sasiala): match sheets up so that diff is complete
-            sheet_path = right_temp_path + '/sheet_' + str(sheet_num) + '.csv'
-            if not sheet_to_csv(xlsx_file.sheet_by_index(sheet_num), sheet_path):
-                print("Sheet to csv failed (right)")
-                return False
+    generate_csvs_for_xlsx(lhs_path, left_temp_path)
+    generate_csvs_for_xlsx(rhs_path, right_temp_path)
     
     temp_lhs_sheets = glob.glob(TEMP_FOLDER + '/lhs/sheet_*.csv')
     lhs_filenames = [path_leaf(i) for i in temp_lhs_sheets]
