@@ -10,6 +10,7 @@ import glob
 import ntpath
 import argparse
 import logger
+import xlsxwriter
 import CsvDiffToSheet as cdts
 import SheetDiffToXlsx as sdtx
 
@@ -60,6 +61,15 @@ def setup_output_directory():
     if not os.path.exists(OUTPUT_FOLDER):
         os.mkdir(OUTPUT_FOLDER)
 
+def generate_csvs_for_xlsx(xlsx_path, temp_path):
+    with xlrd.open_workbook(xlsx_path) as xlsx_file:
+        for sheet_num in range(xlsx_file.nsheets):
+            # TODO(sasiala): match sheets up so that diff is complete
+            sheet_path = f'{temp_path}/sheet_{str(sheet_num)}.csv'
+            if not sheet_to_csv(xlsx_file.sheet_by_index(sheet_num), sheet_path):
+                print(f'Sheet to csv failed on {sheet_path}')
+                return False
+
 def process_xlsx(lhs_path, rhs_path):
     setup_temp_directories()
     logger.initialize_directory_structure()
@@ -68,21 +78,8 @@ def process_xlsx(lhs_path, rhs_path):
 
     left_temp_path = TEMP_FOLDER + '/lhs'
     right_temp_path = TEMP_FOLDER + '/rhs'
-    with xlrd.open_workbook(lhs_path) as xlsx_file:
-        for sheet_num in range(xlsx_file.nsheets):
-            # TODO(sasiala): match sheets up so that diff is complete
-            sheet_path = left_temp_path + '/sheet_' + str(sheet_num) + '.csv'
-            if not sheet_to_csv(xlsx_file.sheet_by_index(sheet_num), sheet_path):
-                print("Sheet to csv failed")
-                return False
-
-    with xlrd.open_workbook(rhs_path) as xlsx_file:
-        for sheet_num in range(xlsx_file.nsheets):
-            # TODO(sasiala): match sheets up so that diff is complete
-            sheet_path = right_temp_path + '/sheet_' + str(sheet_num) + '.csv'
-            if not sheet_to_csv(xlsx_file.sheet_by_index(sheet_num), sheet_path):
-                print("Sheet to csv failed (right)")
-                return False
+    generate_csvs_for_xlsx(lhs_path, left_temp_path)
+    generate_csvs_for_xlsx(rhs_path, right_temp_path)
     
     temp_lhs_sheets = glob.glob(TEMP_FOLDER + '/lhs/sheet_*.csv')
     lhs_filenames = [path_leaf(i) for i in temp_lhs_sheets]
@@ -90,6 +87,8 @@ def process_xlsx(lhs_path, rhs_path):
     rhs_filenames = [path_leaf(i) for i in temp_rhs_sheets]
 
     # TODO(sasiala): this doesn't account for missing sheets in one book
+    xlsx_path = f'{OUTPUT_FOLDER}/final_out.xlsx'
+    workbook = xlsxwriter.Workbook(xlsx_path)
     for i in range(len(lhs_filenames)):
         if not csv_diff(f'{TEMP_FOLDER}/lhs/{lhs_filenames[i]}', f'{TEMP_FOLDER}/rhs/{rhs_filenames[i]}', f'{TEMP_FOLDER}/csv_diff/sheet_{i}.diff'):
             print("Csv diff failed")
@@ -97,9 +96,10 @@ def process_xlsx(lhs_path, rhs_path):
         if not cdts.diff_to_sheet(f'{TEMP_FOLDER}/csv_diff/sheet_{i}.diff', f'{TEMP_FOLDER}/diff_sheets/sheet_{i}.csv'):
             print("Diff to sheet failed")
             return False
-        if not sdtx.csv_to_sheet(f'{TEMP_FOLDER}/diff_sheets/sheet_{i}.csv', f'{OUTPUT_FOLDER}/final_out_{i}.xlsx'):
+        if not sdtx.csv_to_sheet(workbook, f'{TEMP_FOLDER}/diff_sheets/sheet_{i}.csv'):
             print("CSV to Sheet failed")
             return False
+    workbook.close()
     
     # TODO(sasiala): change to merging sheets into new workbook, instead of outputting separate workbooks
 

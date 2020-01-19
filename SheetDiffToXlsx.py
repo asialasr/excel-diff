@@ -7,9 +7,8 @@ import csv
 import xlsxwriter
 import logger
 
-def csv_to_sheet(csv_path, xlsx_path):
+def csv_to_sheet(workbook, csv_path):
     # TODO(sasiala): convert to only add sheets in this function
-    workbook = xlsxwriter.Workbook(xlsx_path)
     worksheet = workbook.add_worksheet()
     change_add_format = workbook.add_format({'bold':True, 'bg_color':'green'})
     change_sub_format = workbook.add_format({'bold':True, 'bg_color':'red'})
@@ -43,7 +42,5 @@ def csv_to_sheet(csv_path, xlsx_path):
             for c, col in enumerate(row):
                 worksheet.write(r, c, col, line_format)
                 
-        workbook.close()
         return True
-    workbook.close()
     return False
