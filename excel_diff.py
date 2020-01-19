@@ -10,6 +10,7 @@ import glob
 import ntpath
 import argparse
 import logger
+import xlsxwriter
 import CsvDiffToSheet as cdts
 import SheetDiffToXlsx as sdtx
 
@@ -86,6 +87,8 @@ def process_xlsx(lhs_path, rhs_path):
     rhs_filenames = [path_leaf(i) for i in temp_rhs_sheets]
 
     # TODO(sasiala): this doesn't account for missing sheets in one book
+    xlsx_path = f'{OUTPUT_FOLDER}/final_out.xlsx'
+    workbook = xlsxwriter.Workbook(xlsx_path)
     for i in range(len(lhs_filenames)):
         if not csv_diff(f'{TEMP_FOLDER}/lhs/{lhs_filenames[i]}', f'{TEMP_FOLDER}/rhs/{rhs_filenames[i]}', f'{TEMP_FOLDER}/csv_diff/sheet_{i}.diff'):
             print("Csv diff failed")
@@ -93,9 +96,10 @@ def process_xlsx(lhs_path, rhs_path):
         if not cdts.diff_to_sheet(f'{TEMP_FOLDER}/csv_diff/sheet_{i}.diff', f'{TEMP_FOLDER}/diff_sheets/sheet_{i}.csv'):
             print("Diff to sheet failed")
             return False
-        if not sdtx.csv_to_sheet(f'{TEMP_FOLDER}/diff_sheets/sheet_{i}.csv', f'{OUTPUT_FOLDER}/final_out_{i}.xlsx'):
+        if not sdtx.csv_to_sheet(workbook, f'{TEMP_FOLDER}/diff_sheets/sheet_{i}.csv'):
             print("CSV to Sheet failed")
             return False
+    workbook.close()
     
     # TODO(sasiala): change to merging sheets into new workbook, instead of outputting separate workbooks
 
