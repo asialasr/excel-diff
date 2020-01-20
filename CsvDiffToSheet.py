@@ -28,6 +28,29 @@ def check_change_sub(line, out_file):
         out_file.write(','.join(new_list))
         out_file.write('\n')
         return True
+    elif re.match('^- .*\n\+ .*$', line):
+        # TODO(sasiala): not sure if this check belongs here; will this always be a subtraction?
+        # TODO(sasiala): having this check here requires two calls of this function in check_compound.  It's awkward.
+        print('ran')
+        split_lines = re.split('\n', line)
+        first_line = re.sub('^- ', '', split_lines[0]).split(',')
+        second_line = re.sub('^\+ ', '', split_lines[1]).split(',')
+        iter_size = len(first_line)
+        if (len(first_line) > len(second_line)):
+            iter_size = len(second_line)
+        
+        # TODO(sasiala): deal with lines of diff sizes (skipping rest of output, currently)
+        new_list = []
+        for col in range(iter_size):
+            if not first_line[col] == second_line[col]:
+                new_list.append('||'.join([first_line[col], second_line[col]]))
+            else:
+                new_list.append(first_line[col])
+        out_file.write('Change/Sub,')
+        out_file.write(','.join(new_list))
+        out_file.write('\n')
+        return True
+
     return False
 
 def check_change_add(line, out_file):
@@ -125,6 +148,9 @@ def check_compound(line_in, out_file):
     elif (len(line) >= 3 and check_change_sub('\n'.join(line[0:3]), out_file)):
         left_over = line[3:]
         logger.log('diff_to_sheet.log', 'Compound:Change/Sub', logger.LogLevel.DEBUG)
+    elif (len(line) == 2 and check_change_sub('\n'.join(line), out_file)):
+        left_over = line[2:]
+        logger.log('diff_to_sheet.log', 'Compound:Change/Sub(len 2)', logger.LogLevel.DEBUG)
         
     for i in left_over:
         # TODO(sasiala): should the check for an empty line be here? 
