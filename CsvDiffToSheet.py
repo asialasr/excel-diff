@@ -31,7 +31,6 @@ def check_change_sub(line, out_file):
     elif re.match('^- .*\n\+ .*$', line):
         # TODO(sasiala): not sure if this check belongs here; will this always be a subtraction?
         # TODO(sasiala): having this check here requires two calls of this function in check_compound.  It's awkward.
-        print('ran')
         split_lines = re.split('\n', line)
         first_line = re.sub('^- ', '', split_lines[0]).split(',')
         second_line = re.sub('^\+ ', '', split_lines[1]).split(',')
