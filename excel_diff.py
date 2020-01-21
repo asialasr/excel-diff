@@ -6,20 +6,16 @@ import csv
 import difflib
 import os # mkdir, path.exists
 import shutil # rmtree
-import glob
 import ntpath
 import argparse
 import logger
+import re
 import xlsxwriter
 import CsvDiffToSheet as cdts
 import SheetDiffToXlsx as sdtx
 
 TEMP_FOLDER='temp'
 OUTPUT_FOLDER='output'
-
-def path_leaf(path):
-    head, tail = ntpath.split(path)
-    return tail or ntpath.basename(head)
 
 def sheet_to_csv(sheet, out_path):
     with open(out_path, 'w') as temp_csv:
@@ -63,12 +59,60 @@ def setup_output_directory():
 
 def generate_csvs_for_xlsx(xlsx_path, temp_path):
     with xlrd.open_workbook(xlsx_path) as xlsx_file:
-        for sheet_num in range(xlsx_file.nsheets):
-            # TODO(sasiala): match sheets up so that diff is complete
-            sheet_path = f'{temp_path}/sheet_{str(sheet_num)}.csv'
-            if not sheet_to_csv(xlsx_file.sheet_by_index(sheet_num), sheet_path):
-                print(f'Sheet to csv failed on {sheet_path}')
-                return False
+        with open(f'{temp_path}/sheet_names.txt', 'w') as sheet_name_file:
+            sheet_name_file.write('\n'.join(xlsx_file.sheet_names()))
+            for sheet_num in range(xlsx_file.nsheets):
+                # TODO(sasiala): match sheets up so that diff is complete
+                sheet = xlsx_file.sheet_by_index(sheet_num)
+                sheet_path = f'{temp_path}/{sheet.name}.csv'
+                if not sheet_to_csv(xlsx_file.sheet_by_index(sheet_num), sheet_path):
+                    print(f'Sheet to csv failed on {sheet_path}')
+                    return False
+            return True
+        return False
+    return False
+
+def get_unified_sheets(lhs_sheet_file, lhs_temp_path, rhs_sheet_file, rhs_temp_path):
+    unified = []
+    with open(lhs_sheet_file, 'r') as lhs_sheets:
+        with open(rhs_sheet_file, 'r') as rhs_sheets:
+            with open('temp_out.txt', 'w') as out_file:
+                d = difflib.Differ()
+                diff_gen = difflib.ndiff(lhs_sheets.read().splitlines(1), rhs_sheets.read().splitlines(1))
+                diff = [i.rstrip() for i in diff_gen]
+                
+    skip_next = False
+    for i in range(len(diff)):
+        if skip_next:
+            skip_next = False
+            continue
+
+        if re.match('^  .*$', diff[i]):
+            unified.append(['b', re.sub('^  ', '', diff[i])])
+        elif re.match('^\+ .*$', diff[i]):
+            unified.append(['n', re.sub('^\+ ', '', diff[i])])
+        elif re.match('^- .*$', diff[i]):
+            this_line_sub = re.sub('^- ', '', diff[i])
+            if i < len(diff) - 1 and re.match('^\+ .*$', diff[i+1]):
+                # r stands for rename (potential)
+                next_line_sub = re.sub('^\+ ', '', diff[i + 1])
+
+                with open(f'{lhs_temp_path}/{this_line_sub}.csv', 'r') as lhs_csv:
+                    with open(f'{rhs_temp_path}/{next_line_sub}.csv', 'r') as rhs_csv:
+                        seq = difflib.SequenceMatcher(None, lhs_csv.read(), rhs_csv.read())
+                
+                if seq.quick_ratio() > .5:
+                    unified.append(['r', f'{this_line_sub},{next_line_sub}'])
+                    # TODO(sasiala): reconsider output format for r; are commas allowed in sheet names?
+                    skip_next = True
+                else:
+                    unified.append(['d', this_line_sub])
+            else:
+                unified.append(['d', this_line_sub])
+        else:
+            print('Unexpected format in unified sheets')
+
+    return unified
 
 def process_xlsx(lhs_path, rhs_path):
     setup_temp_directories()
@@ -81,27 +125,60 @@ def process_xlsx(lhs_path, rhs_path):
     generate_csvs_for_xlsx(lhs_path, left_temp_path)
     generate_csvs_for_xlsx(rhs_path, right_temp_path)
     
-    temp_lhs_sheets = glob.glob(TEMP_FOLDER + '/lhs/sheet_*.csv')
-    lhs_filenames = [path_leaf(i) for i in temp_lhs_sheets]
-    temp_rhs_sheets = glob.glob(TEMP_FOLDER + '/rhs/sheet_*.csv')
-    rhs_filenames = [path_leaf(i) for i in temp_rhs_sheets]
+    # TODO(sasiala): use workbook.sheet_names() for lhs and rhs to see new/deleted sheets
+    
+    lhs_sheet_names = []
+    with open(f'{left_temp_path}/sheet_names.txt', 'r') as sheet_name_file:
+        lhs_sheet_names = sheet_name_file.read().split('\n')
+    
+    rhs_sheet_names = []
+    with open(f'{right_temp_path}/sheet_names.txt', 'r') as sheet_name_file:
+        rhs_sheet_names = sheet_name_file.read().split('\n')
+
+    unified_sheets = get_unified_sheets(f'{left_temp_path}/sheet_names.txt', left_temp_path, f'{right_temp_path}/sheet_names.txt', right_temp_path)
 
     # TODO(sasiala): this doesn't account for missing sheets in one book
     xlsx_path = f'{OUTPUT_FOLDER}/final_out.xlsx'
     workbook = xlsxwriter.Workbook(xlsx_path)
-    for i in range(len(lhs_filenames)):
-        if not csv_diff(f'{TEMP_FOLDER}/lhs/{lhs_filenames[i]}', f'{TEMP_FOLDER}/rhs/{rhs_filenames[i]}', f'{TEMP_FOLDER}/csv_diff/sheet_{i}.diff'):
-            print("Csv diff failed")
-            return False
-        if not cdts.diff_to_sheet(f'{TEMP_FOLDER}/csv_diff/sheet_{i}.diff', f'{TEMP_FOLDER}/diff_sheets/sheet_{i}.csv'):
-            print("Diff to sheet failed")
-            return False
-        if not sdtx.csv_to_sheet(workbook, f'{TEMP_FOLDER}/diff_sheets/sheet_{i}.csv'):
+    for sheet_pair in unified_sheets:
+        output_sheet_path=''
+        sheet_name=''
+
+        if sheet_pair[0]=='b' or sheet_pair[0]=='r':
+            left_csv_path=''
+            right_csv_path=''
+            if sheet_pair[0]=='b':
+                left_csv_path=f'{TEMP_FOLDER}/lhs/{sheet_pair[1]}.csv'
+                right_csv_path=f'{TEMP_FOLDER}/rhs/{sheet_pair[1]}.csv'
+                sheet_name=sheet_pair[1]
+            else:
+                temp_sheet_names=sheet_pair[1].split(',')
+                left_csv_path=f'{TEMP_FOLDER}/lhs/{temp_sheet_names[0]}.csv'
+                right_csv_path=f'{TEMP_FOLDER}/rhs/{temp_sheet_names[1]}.csv'
+                sheet_name='__CCAT__'.join(temp_sheet_names)
+
+            output_sheet_path=f'{TEMP_FOLDER}/diff_sheets/{sheet_name}.csv'
+
+            if not csv_diff(left_csv_path, right_csv_path, f'{TEMP_FOLDER}/csv_diff/{sheet_name}.diff'):
+                print("Csv diff failed")
+                return False
+            if not cdts.diff_to_sheet(f'{TEMP_FOLDER}/csv_diff/{sheet_name}.diff', output_sheet_path):
+                print("Diff to sheet failed")
+                return False
+        elif sheet_pair[0]=='n':
+            sheet_name=f'__NEW__{sheet_pair[1]}'
+            output_sheet_path=f'{TEMP_FOLDER}/rhs/{sheet_pair[1]}.csv'
+        elif sheet_pair[0]=='d':
+            sheet_name=f'__DEL__{sheet_pair[1]}'
+            output_sheet_path=f'{TEMP_FOLDER}/lhs/{sheet_pair[1]}.csv'
+
+        if not sdtx.csv_to_sheet(workbook, output_sheet_path, sheet_name):
             print("CSV to Sheet failed")
             return False
     workbook.close()
-    
-    # TODO(sasiala): change to merging sheets into new workbook, instead of outputting separate workbooks
+
+    # TODO(sasiala): move code into functions/modules
+    # TODO(sasiala): add logging
 
     # TODO(sasiala): remove temp directories, also remove at other returns
     # remove_temp_directories()

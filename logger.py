@@ -20,7 +20,6 @@ class LogLevel(Enum):
 log_dir_path='log'
 log_level_thresh=LogLevel.FATAL
 
-# TODO(sasiala): path_leaf defined in multiple places.  Reconsider.
 def path_leaf(path):
     head, tail = ntpath.split(path)
     return tail or ntpath.basename(head)
