@@ -38,7 +38,8 @@ def csv_to_sheet(workbook, csv_path, sheet_name):
                     logger.log('csv_to_xlsx.log', 'No Change', logger.LogLevel.DEBUG)
                     line_format = no_change_format
                 else:
-                    logger.log('csv_to_xlsx.log', 'Curious...', logger.LogLevel.ERROR)
+                    logger.log('csv_to_xlsx.log', 'No Change (unprocessed csv)', logger.LogLevel.ERROR)
+                    line_format = no_change_format
             
             for c, col in enumerate(row):
                 worksheet.write(r, c, col, line_format)

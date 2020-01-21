@@ -167,10 +167,20 @@ def process_xlsx(lhs_path, rhs_path):
                 return False
         elif sheet_pair[0]=='n':
             sheet_name=f'__NEW__{sheet_pair[1]}'
-            output_sheet_path=f'{TEMP_FOLDER}/rhs/{sheet_pair[1]}.csv'
+            output_sheet_path=f'{TEMP_FOLDER}/rhs/{sheet_pair[1]}_proc.csv'
+
+            # TODO(sasiala): a) will this work correctly? b) may need to fix original csv gen & thus fix everythin else
+            with open(f'{TEMP_FOLDER}/rhs/{sheet_pair[1]}.csv', 'r') as unprocessed_csv:
+                with open(output_sheet_path, 'w') as processed_csv:
+                    processed_csv.write(re.sub('\n\n','\n',unprocessed_csv.read()))
         elif sheet_pair[0]=='d':
             sheet_name=f'__DEL__{sheet_pair[1]}'
-            output_sheet_path=f'{TEMP_FOLDER}/lhs/{sheet_pair[1]}.csv'
+            output_sheet_path=f'{TEMP_FOLDER}/lhs/{sheet_pair[1]}_proc.csv'
+
+            # TODO(sasiala): a) will this work correctly? b) may need to fix original csv gen & thus fix everythin else
+            with open(f'{TEMP_FOLDER}/lhs/{sheet_pair[1]}.csv', 'r') as unprocessed_csv:
+                with open(output_sheet_path, 'w') as processed_csv:
+                    processed_csv.write(re.sub('\n\n','\n',unprocessed_csv.read()))
 
         if not sdtx.csv_to_sheet(workbook, output_sheet_path, sheet_name):
             print("CSV to Sheet failed")
