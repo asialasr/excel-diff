@@ -9,6 +9,7 @@ import shutil # rmtree
 import ntpath
 import argparse
 import logger
+import re
 import xlsxwriter
 import CsvDiffToSheet as cdts
 import SheetDiffToXlsx as sdtx
@@ -71,6 +72,48 @@ def generate_csvs_for_xlsx(xlsx_path, temp_path):
         return False
     return False
 
+def get_unified_sheets(lhs_sheet_file, lhs_temp_path, rhs_sheet_file, rhs_temp_path):
+    unified = []
+    with open(lhs_sheet_file, 'r') as lhs_sheets:
+        with open(rhs_sheet_file, 'r') as rhs_sheets:
+            with open('temp_out.txt', 'w') as out_file:
+                d = difflib.Differ()
+                diff_gen = difflib.ndiff(lhs_sheets.read().splitlines(1), rhs_sheets.read().splitlines(1))
+                diff = [i.rstrip() for i in diff_gen]
+                
+    skip_next = False
+    for i in range(len(diff)):
+        if skip_next:
+            skip_next = False
+            continue
+
+        if re.match('^  .*$', diff[i]):
+            unified.append(['b', re.sub('^  ', '', diff[i])])
+        elif re.match('^\+ .*$', diff[i]):
+            unified.append(['n', re.sub('^\+ ', '', diff[i])])
+        elif re.match('^- .*$', diff[i]):
+            this_line_sub = re.sub('^- ', '', diff[i])
+            if i < len(diff) - 1 and re.match('^\+ .*$', diff[i+1]):
+                # r stands for rename (potential)
+                next_line_sub = re.sub('^\+ ', '', diff[i + 1])
+
+                with open(f'{lhs_temp_path}/{this_line_sub}.csv', 'r') as lhs_csv:
+                    with open(f'{rhs_temp_path}/{next_line_sub}.csv', 'r') as rhs_csv:
+                        seq = difflib.SequenceMatcher(None, lhs_csv.read(), rhs_csv.read())
+                
+                if seq.quick_ratio() > .5:
+                    unified.append(['r', f'{this_line_sub},{next_line_sub}'])
+                    # TODO(sasiala): reconsider output format for r; are commas allowed in sheet names?
+                    skip_next = True
+                else:
+                    unified.append(['n', this_line_sub])
+            else:
+                unified.append(['d', this_line_sub])
+        else:
+            print('Unexpected format in unified sheets')
+
+    return unified
+
 def process_xlsx(lhs_path, rhs_path):
     setup_temp_directories()
     logger.initialize_directory_structure()
@@ -91,6 +134,8 @@ def process_xlsx(lhs_path, rhs_path):
     rhs_sheet_names = []
     with open(f'{right_temp_path}/sheet_names.txt', 'r') as sheet_name_file:
         rhs_sheet_names = sheet_name_file.read().split('\n')
+
+    get_unified_sheets(f'{left_temp_path}/sheet_names.txt', left_temp_path, f'{right_temp_path}/sheet_names.txt', right_temp_path)
 
     # TODO(sasiala): this doesn't account for missing sheets in one book
     xlsx_path = f'{OUTPUT_FOLDER}/final_out.xlsx'
