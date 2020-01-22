@@ -155,7 +155,7 @@ def process_xlsx(lhs_path, rhs_path):
                 temp_sheet_names=sheet_pair[1].split(',')
                 left_csv_path=f'{TEMP_FOLDER}/lhs/{temp_sheet_names[0]}.csv'
                 right_csv_path=f'{TEMP_FOLDER}/rhs/{temp_sheet_names[1]}.csv'
-                sheet_name='__CCAT__'.join(temp_sheet_names)
+                sheet_name='__RENAME__'.join(temp_sheet_names)
 
             output_sheet_path=f'{TEMP_FOLDER}/diff_sheets/{sheet_name}.csv'
 
