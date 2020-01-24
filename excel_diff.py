@@ -64,7 +64,6 @@ def generate_csvs_for_xlsx(xlsx_path, temp_path):
         with open(f'{temp_path}/sheet_names.txt', 'w') as sheet_name_file:
             sheet_name_file.write('\n'.join(xlsx_file.sheet_names()))
             for sheet_num in range(xlsx_file.nsheets):
-                # TODO(sasiala): match sheets up so that diff is complete
                 sheet = xlsx_file.sheet_by_index(sheet_num)
                 sheet_path = f'{temp_path}/{sheet.name}.csv'
                 if not sheet_to_csv(xlsx_file.sheet_by_index(sheet_num), sheet_path):
@@ -78,10 +77,9 @@ def get_unified_sheets(lhs_sheet_file, lhs_temp_path, rhs_sheet_file, rhs_temp_p
     unified = []
     with open(lhs_sheet_file, 'r') as lhs_sheets:
         with open(rhs_sheet_file, 'r') as rhs_sheets:
-            with open('temp_out.txt', 'w') as out_file:
-                d = difflib.Differ()
-                diff_gen = difflib.ndiff(lhs_sheets.read().splitlines(1), rhs_sheets.read().splitlines(1))
-                diff = [i.rstrip() for i in diff_gen]
+            d = difflib.Differ()
+            diff_gen = difflib.ndiff(lhs_sheets.read().splitlines(1), rhs_sheets.read().splitlines(1))
+            diff = [i.rstrip() for i in diff_gen]
                 
     skip_next = False
     for i in range(len(diff)):
@@ -104,8 +102,7 @@ def get_unified_sheets(lhs_sheet_file, lhs_temp_path, rhs_sheet_file, rhs_temp_p
                         seq = difflib.SequenceMatcher(None, lhs_csv.read(), rhs_csv.read())
                 
                 if seq.quick_ratio() > .5:
-                    unified.append(['r', f'{this_line_sub},{next_line_sub}'])
-                    # TODO(sasiala): reconsider output format for r; are commas allowed in sheet names?
+                    unified.append(['r', f'{this_line_sub}]{next_line_sub}'])
                     skip_next = True
                 else:
                     unified.append(['d', this_line_sub])
@@ -125,8 +122,6 @@ def process_xlsx(lhs_path, rhs_path):
     right_temp_path = TEMP_FOLDER + '/rhs'
     generate_csvs_for_xlsx(lhs_path, left_temp_path)
     generate_csvs_for_xlsx(rhs_path, right_temp_path)
-    
-    # TODO(sasiala): use workbook.sheet_names() for lhs and rhs to see new/deleted sheets
     
     lhs_sheet_names = []
     with open(f'{left_temp_path}/sheet_names.txt', 'r') as sheet_name_file:
@@ -153,7 +148,7 @@ def process_xlsx(lhs_path, rhs_path):
                 right_csv_path=f'{TEMP_FOLDER}/rhs/{sheet_pair[1]}.csv'
                 sheet_name=sheet_pair[1]
             else:
-                temp_sheet_names=sheet_pair[1].split(',')
+                temp_sheet_names=sheet_pair[1].split(']')
                 left_csv_path=f'{TEMP_FOLDER}/lhs/{temp_sheet_names[0]}.csv'
                 right_csv_path=f'{TEMP_FOLDER}/rhs/{temp_sheet_names[1]}.csv'
                 sheet_name='__RENAME__'.join(temp_sheet_names)
@@ -170,7 +165,7 @@ def process_xlsx(lhs_path, rhs_path):
             sheet_name=f'__NEW__{sheet_pair[1]}'
             output_sheet_path=f'{TEMP_FOLDER}/rhs/{sheet_pair[1]}_proc.csv'
 
-            # TODO(sasiala): a) will this work correctly? b) may need to fix original csv gen & thus fix everythin else
+            # TODO(sasiala): a) will this work correctly? b) may need to fix original csv gen & thus fix everything else
             with open(f'{TEMP_FOLDER}/rhs/{sheet_pair[1]}.csv', 'r') as unprocessed_csv:
                 with open(output_sheet_path, 'w') as processed_csv:
                     processed_csv.write(re.sub('\n\n','\n',unprocessed_csv.read()))
@@ -178,7 +173,7 @@ def process_xlsx(lhs_path, rhs_path):
             sheet_name=f'__DEL__{sheet_pair[1]}'
             output_sheet_path=f'{TEMP_FOLDER}/lhs/{sheet_pair[1]}_proc.csv'
 
-            # TODO(sasiala): a) will this work correctly? b) may need to fix original csv gen & thus fix everythin else
+            # TODO(sasiala): a) will this work correctly? b) may need to fix original csv gen & thus fix everything else
             with open(f'{TEMP_FOLDER}/lhs/{sheet_pair[1]}.csv', 'r') as unprocessed_csv:
                 with open(output_sheet_path, 'w') as processed_csv:
                     processed_csv.write(re.sub('\n\n','\n',unprocessed_csv.read()))
@@ -214,7 +209,6 @@ def main():
     global save_temp
     save_temp=args.save_temp
 
-    # TODO(sasiala): add logging command line option
     process_xlsx(args.lhspath, args.rhspath)
 
 if __name__ == "__main__":
