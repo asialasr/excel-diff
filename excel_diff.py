@@ -17,6 +17,8 @@ import SheetDiffToXlsx as sdtx
 TEMP_FOLDER='temp'
 OUTPUT_FOLDER='output'
 
+save_temp=False
+
 def sheet_to_csv(sheet, out_path):
     with open(out_path, 'w') as temp_csv:
         wr = csv.writer(temp_csv, quoting=csv.QUOTE_ALL)
@@ -117,7 +119,6 @@ def get_unified_sheets(lhs_sheet_file, lhs_temp_path, rhs_sheet_file, rhs_temp_p
 def process_xlsx(lhs_path, rhs_path):
     setup_temp_directories()
     logger.initialize_directory_structure()
-    logger.set_log_level(logger.LogLevel.DEBUG)
     setup_output_directory()
 
     left_temp_path = TEMP_FOLDER + '/lhs'
@@ -190,16 +191,29 @@ def process_xlsx(lhs_path, rhs_path):
     # TODO(sasiala): move code into functions/modules
     # TODO(sasiala): add logging
 
-    # TODO(sasiala): remove temp directories, also remove at other returns
-    # remove_temp_directories()
+    if not save_temp:
+        remove_temp_directories()
+
     return True
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('lhspath')
     parser.add_argument('rhspath')
+    # TODO(sasiala): rethink argument naming
+    parser.add_argument('-v', '--verbose', action='count', default=0, help='Increase Verbosity')
+    parser.add_argument('-st', '--save-temp', action='store_true', help='Save all temporary files')
     args = parser.parse_args()
-    
+
+    try:
+        loglevel = logger.LogLevel(args.verbose)
+    except:
+        loglevel = logger.LogLevel.ERROR
+    logger.set_log_level(loglevel)
+
+    global save_temp
+    save_temp=args.save_temp
+
     # TODO(sasiala): add logging command line option
     process_xlsx(args.lhspath, args.rhspath)
 
