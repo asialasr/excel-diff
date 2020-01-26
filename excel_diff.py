@@ -130,7 +130,8 @@ def check_modified_sheet(workbook, sheet_pair, output_sheet_path, sheet_name):
             temp_sheet_names=sheet_pair[1].split(']')
             left_csv_path=f'{LHS_TEMP_FOLDER}/{temp_sheet_names[0]}.csv'
             right_csv_path=f'{RHS_TEMP_FOLDER}/{temp_sheet_names[1]}.csv'
-            sheet_name.append('__RENAME__'.join(temp_sheet_names))
+            # prints length of original sheet name to indicate where split occurs
+            sheet_name.append(f'_RNM{len(temp_sheet_names[0])}_{temp_sheet_names[0]}_{temp_sheet_names[1]}')
 
         output_sheet_path.append(f'{SHEET_DIFF_TEMP_FOLDER}/{sheet_name[0]}.csv')
 
@@ -145,7 +146,7 @@ def check_modified_sheet(workbook, sheet_pair, output_sheet_path, sheet_name):
 
 def check_new_sheet(workbook, sheet_pair, output_sheet_path, sheet_name):
     if sheet_pair[0]=='n':
-        sheet_name.append(f'__NEW__{sheet_pair[1]}')
+        sheet_name.append(f'_NEW_{sheet_pair[1]}')
         output_sheet_path.append(f'{RHS_TEMP_FOLDER}/{sheet_pair[1]}_proc.csv')
 
         # TODO(sasiala): a) will this work correctly? b) may need to fix original csv gen & thus fix everything else
@@ -157,7 +158,7 @@ def check_new_sheet(workbook, sheet_pair, output_sheet_path, sheet_name):
 
 def check_deleted_sheet(workbook, sheet_pair, output_sheet_path, sheet_name):
     if sheet_pair[0]=='d':
-        sheet_name.append(f'__DEL__{sheet_pair[1]}')
+        sheet_name.append(f'_DEL_{sheet_pair[1]}')
         output_sheet_path.append(f'{LHS_TEMP_FOLDER}/{sheet_pair[1]}_proc.csv')
 
         # TODO(sasiala): a) will this work correctly? b) may need to fix original csv gen & thus fix everything else
