@@ -19,6 +19,8 @@ import SheetDiffToXlsx as sdtx
 TEMP_FOLDER='temp'
 LHS_TEMP_FOLDER=TEMP_FOLDER+'/lhs'
 RHS_TEMP_FOLDER=TEMP_FOLDER+'/rhs'
+SHEET_DIFF_TEMP_FOLDER=TEMP_FOLDER+'/diff_sheets'
+CSV_DIFF_TEMP_FOLDER=TEMP_FOLDER+'/csv_diff'
 OUTPUT_FOLDER='output'
 
 save_temp=False
@@ -56,8 +58,8 @@ def setup_temp_directories():
     os.mkdir(TEMP_FOLDER)
     os.mkdir(LHS_TEMP_FOLDER)
     os.mkdir(RHS_TEMP_FOLDER)
-    os.mkdir(TEMP_FOLDER + '/diff_sheets')
-    os.mkdir(TEMP_FOLDER + '/csv_diff')
+    os.mkdir(SHEET_DIFF_TEMP_FOLDER)
+    os.mkdir(CSV_DIFF_TEMP_FOLDER)
 
 def setup_output_directory():
     if not os.path.exists(OUTPUT_FOLDER):
@@ -131,12 +133,12 @@ def check_modified_sheet(workbook, sheet_pair, output_sheet_path, sheet_name):
             right_csv_path=f'{RHS_TEMP_FOLDER}/{temp_sheet_names[1]}.csv'
             sheet_name.append('__RENAME__'.join(temp_sheet_names))
 
-        output_sheet_path.append(f'{TEMP_FOLDER}/diff_sheets/{sheet_name[0]}.csv')
+        output_sheet_path.append(f'{SHEET_DIFF_TEMP_FOLDER}/{sheet_name[0]}.csv')
 
-        if not csv_diff(left_csv_path, right_csv_path, f'{TEMP_FOLDER}/csv_diff/{sheet_name[0]}.diff'):
+        if not csv_diff(left_csv_path, right_csv_path, f'{CSV_DIFF_TEMP_FOLDER}/{sheet_name[0]}.diff'):
             print("Csv diff failed")
             return False
-        if not cdts.diff_to_sheet(f'{TEMP_FOLDER}/csv_diff/{sheet_name[0]}.diff', output_sheet_path[0]):
+        if not cdts.diff_to_sheet(f'{CSV_DIFF_TEMP_FOLDER}/{sheet_name[0]}.diff', output_sheet_path[0]):
             print("Diff to sheet failed")
             return False
         return True
