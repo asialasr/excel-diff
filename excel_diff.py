@@ -17,6 +17,8 @@ import SheetDiffToXlsx as sdtx
 # TODO(sasiala): raise exceptions at errors
 
 TEMP_FOLDER='temp'
+LHS_TEMP_FOLDER=TEMP_FOLDER+'/lhs'
+RHS_TEMP_FOLDER=TEMP_FOLDER+'/rhs'
 OUTPUT_FOLDER='output'
 
 save_temp=False
@@ -52,8 +54,8 @@ def setup_temp_directories():
     remove_temp_directories()
 
     os.mkdir(TEMP_FOLDER)
-    os.mkdir(TEMP_FOLDER + '/lhs')
-    os.mkdir(TEMP_FOLDER + '/rhs')
+    os.mkdir(LHS_TEMP_FOLDER)
+    os.mkdir(RHS_TEMP_FOLDER)
     os.mkdir(TEMP_FOLDER + '/diff_sheets')
     os.mkdir(TEMP_FOLDER + '/csv_diff')
 
@@ -120,13 +122,13 @@ def check_modified_sheet(workbook, sheet_pair, output_sheet_path, sheet_name):
         left_csv_path=''
         right_csv_path=''
         if sheet_pair[0]=='b':
-            left_csv_path=f'{TEMP_FOLDER}/lhs/{sheet_pair[1]}.csv'
-            right_csv_path=f'{TEMP_FOLDER}/rhs/{sheet_pair[1]}.csv'
+            left_csv_path=f'{LHS_TEMP_FOLDER}/{sheet_pair[1]}.csv'
+            right_csv_path=f'{RHS_TEMP_FOLDER}/{sheet_pair[1]}.csv'
             sheet_name.append(sheet_pair[1])
         else:
             temp_sheet_names=sheet_pair[1].split(']')
-            left_csv_path=f'{TEMP_FOLDER}/lhs/{temp_sheet_names[0]}.csv'
-            right_csv_path=f'{TEMP_FOLDER}/rhs/{temp_sheet_names[1]}.csv'
+            left_csv_path=f'{LHS_TEMP_FOLDER}/{temp_sheet_names[0]}.csv'
+            right_csv_path=f'{RHS_TEMP_FOLDER}/{temp_sheet_names[1]}.csv'
             sheet_name.append('__RENAME__'.join(temp_sheet_names))
 
         output_sheet_path.append(f'{TEMP_FOLDER}/diff_sheets/{sheet_name[0]}.csv')
@@ -143,10 +145,10 @@ def check_modified_sheet(workbook, sheet_pair, output_sheet_path, sheet_name):
 def check_new_sheet(workbook, sheet_pair, output_sheet_path, sheet_name):
     if sheet_pair[0]=='n':
         sheet_name.append(f'__NEW__{sheet_pair[1]}')
-        output_sheet_path.append(f'{TEMP_FOLDER}/rhs/{sheet_pair[1]}_proc.csv')
+        output_sheet_path.append(f'{RHS_TEMP_FOLDER}/{sheet_pair[1]}_proc.csv')
 
         # TODO(sasiala): a) will this work correctly? b) may need to fix original csv gen & thus fix everything else
-        with open(f'{TEMP_FOLDER}/rhs/{sheet_pair[1]}.csv', 'r') as unprocessed_csv:
+        with open(f'{RHS_TEMP_FOLDER}/{sheet_pair[1]}.csv', 'r') as unprocessed_csv:
             with open(output_sheet_path[0], 'w') as processed_csv:
                 processed_csv.write(re.sub('\n\n','\n',unprocessed_csv.read()))
                 return True
@@ -155,10 +157,10 @@ def check_new_sheet(workbook, sheet_pair, output_sheet_path, sheet_name):
 def check_deleted_sheet(workbook, sheet_pair, output_sheet_path, sheet_name):
     if sheet_pair[0]=='d':
         sheet_name.append(f'__DEL__{sheet_pair[1]}')
-        output_sheet_path.append(f'{TEMP_FOLDER}/lhs/{sheet_pair[1]}_proc.csv')
+        output_sheet_path.append(f'{LHS_TEMP_FOLDER}/{sheet_pair[1]}_proc.csv')
 
         # TODO(sasiala): a) will this work correctly? b) may need to fix original csv gen & thus fix everything else
-        with open(f'{TEMP_FOLDER}/lhs/{sheet_pair[1]}.csv', 'r') as unprocessed_csv:
+        with open(f'{LHS_TEMP_FOLDER}/{sheet_pair[1]}.csv', 'r') as unprocessed_csv:
             with open(output_sheet_path[0], 'w') as processed_csv:
                 processed_csv.write(re.sub('\n\n','\n',unprocessed_csv.read()))
                 return True
@@ -190,29 +192,25 @@ def process_xlsx(lhs_path, rhs_path):
     logger.initialize_directory_structure()
     setup_output_directory()
 
-    left_temp_path = TEMP_FOLDER + '/lhs'
-    right_temp_path = TEMP_FOLDER + '/rhs'
-    generate_csvs_for_xlsx(lhs_path, left_temp_path)
-    generate_csvs_for_xlsx(rhs_path, right_temp_path)
+    generate_csvs_for_xlsx(lhs_path, LHS_TEMP_FOLDER)
+    generate_csvs_for_xlsx(rhs_path, RHS_TEMP_FOLDER)
     
     lhs_sheet_names = []
-    with open(f'{left_temp_path}/sheet_names.txt', 'r') as sheet_name_file:
+    with open(f'{LHS_TEMP_FOLDER}/sheet_names.txt', 'r') as sheet_name_file:
         lhs_sheet_names = sheet_name_file.read().split('\n')
     
     rhs_sheet_names = []
-    with open(f'{right_temp_path}/sheet_names.txt', 'r') as sheet_name_file:
+    with open(f'{RHS_TEMP_FOLDER}/sheet_names.txt', 'r') as sheet_name_file:
         rhs_sheet_names = sheet_name_file.read().split('\n')
 
-    unified_sheets = get_unified_sheets(f'{left_temp_path}/sheet_names.txt', left_temp_path, f'{right_temp_path}/sheet_names.txt', right_temp_path)
+    unified_sheets = get_unified_sheets(f'{LHS_TEMP_FOLDER}/sheet_names.txt', LHS_TEMP_FOLDER, f'{RHS_TEMP_FOLDER}/sheet_names.txt', RHS_TEMP_FOLDER)
 
-    # TODO(sasiala): this doesn't account for missing sheets in one book
     xlsx_path = f'{OUTPUT_FOLDER}/final_out.xlsx'
     workbook = xlsxwriter.Workbook(xlsx_path)
     for sheet_pair in unified_sheets:
         process_sheet(workbook, sheet_pair)
     workbook.close()
 
-    # TODO(sasiala): move code into functions/modules
     # TODO(sasiala): add logging
 
     if not save_temp:
