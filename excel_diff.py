@@ -6,7 +6,6 @@ import csv
 import difflib
 import os # mkdir, path.exists
 import shutil # rmtree
-import ntpath
 import argparse
 import logger
 import re
