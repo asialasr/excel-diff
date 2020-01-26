@@ -8,8 +8,6 @@ import xlsxwriter
 import logger
 
 def csv_to_sheet(workbook, csv_path, sheet_name):
-    # TODO(sasiala): should sheet_name instead be parsed from csv_path?
-    # TODO(sasiala): convert to only add sheets in this function
     worksheet = workbook.add_worksheet(sheet_name)
     change_add_format = workbook.add_format({'bold':True, 'bg_color':'green'})
     change_sub_format = workbook.add_format({'bold':True, 'bg_color':'red'})
