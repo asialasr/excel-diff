@@ -269,13 +269,43 @@ def find_sheet(sheet_pair):
     
     return ret + get_gui_destination_filename(sheet_pair)
 
+def copy_unprocessed_sheet(sheet_type, source_path, destination_path):
+    with open(source_path, 'r') as src:
+        with open(destination_path, 'w') as dest:
+            lines = re.split('\n\n', src.read())
+            prep_lines = []
+            if sheet_type==NEW_SHEET:
+                # TODO(sasiala): update prepended strings to use a CONSTANT_VARIABLE
+                prep_lines = ['Change/Add,' + line for line in lines if not line=='']
+            elif sheet_type==DELETED_SHEET:
+                prep_lines = ['Change/Sub,' + line for line in lines if not line=='']
+            else:
+                logger.log('excel_diff.log', 'Error: unrecognized sheet type in copy_unprocessed_sheet', logger.LogLevel.ERROR)
+                return False
+
+            joined_lines = ('\n').join(prep_lines)
+            dest.write(joined_lines)
+    return True
+
+def copy_sheet(sheet_pair, destination_dir):
+    sheet_path = find_sheet(sheet_pair)
+    if sheet_path == '':
+        logger.log('excel_diff.log', 'Error: file not found in copy_sheet', logger.LogLevel.ERROR)
+        return False
+
+    if sheet_pair[0]==NEW_SHEET or sheet_pair[0]==DELETED_SHEET:
+        if not copy_unprocessed_sheet(sheet_pair[0], sheet_path, f'{destination_dir}/{get_gui_destination_filename(sheet_pair)}'):
+            logger.LogLevel('excel_diff.log', 'Error: failure in copy_unprocessed_sheet in copy_sheet', logger.LogLevel.ERROR)
+            return False
+    else:
+        shutil.copy(sheet_path, f'{destination_dir}/{get_gui_destination_filename(sheet_pair)}')
+
+    return True
+
 def copy_sheets(unified_sheets, source_dir, destination_dir):
     for sheet in unified_sheets:
-        sheet_path = find_sheet(sheet)
-        if not sheet_path == '':
-            shutil.copy(sheet_path, f'{destination_dir}/{get_gui_destination_filename(sheet)}')
-        else:
-            logger.log('excel_diff.log', 'Error: file not found in copy_sheets', logger.LogLevel.ERROR)
+        if not copy_sheet(sheet, destination_dir):
+            logger.log('excel_diff.log', 'Error: copy_sheet failed in copy_sheets', logger.LogLevel.ERROR)
             return False
     return True
 
