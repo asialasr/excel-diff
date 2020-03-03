@@ -356,7 +356,14 @@ def main():
     parser.add_argument('-v', '--verbose', action='count', default=0, help='Increase Verbosity')
     parser.add_argument('-st', '--save-temp', action='store_true', help='Save all temporary files')
     parser.add_argument('-g', '--gui-out', action='store_true', help='Output files for GUI instead of xlsx')
+    parser.add_argument('-gf', '--gui-folder', help='Redirect output folder for GUI output')
     args = parser.parse_args()
+
+    if args.gui_folder is not None:
+        # TODO(sasiala): pass output folder through functions, instead of changing "constant"
+        # TODO(sasiala): should I add arg to change output folder?
+        global GUI_OUTPUT_FOLDER
+        GUI_OUTPUT_FOLDER = str(args.gui_folder)
 
     try:
         loglevel = logger.LogLevel(args.verbose)
