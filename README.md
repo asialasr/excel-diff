@@ -1,6 +1,6 @@
 # excel-diff
 ## Overview
-This project is a (currently shoddy) diff-tool for excel files.  It isn't particularly well tested at the moment, but it is able to detect added & deleted sheets, modified sheets, and modified cells.  It takes as input the path to two excel files and outputs a single excel file which is formatted to show added, deleted, and modified cells and uses prefixes on the tab names to indicate new, deleted, and modified tabs.
+This project is a (currently rather shoddy) diff-tool for excel files.  It isn't particularly well tested at the moment, but it is able to detect added & deleted sheets, modified sheets, and modified cells.  It takes as input the path to two excel files and outputs a single excel file which is formatted to show added, deleted, and modified cells and uses prefixes on the tab names to indicate new, deleted, and modified tabs.
 
 I haven't gotten a chance to work on this in a while, but hope to get back to it soon to clean it up and test it better.
 
@@ -10,7 +10,7 @@ This project uses the Python libraries xlsxwriter and xlrd (can be installed via
 // TODO(asialasr): double-check libraries
 
 ## Python
-I'm going off of memory, but I think that I was using Python36-32 for this, but I'll also try to double-check that.
+I'm going off of memory, but I think that I was using Python36 for this, but I'll also try to double-check that.
 
 // TODO(asialasr): add Python minimum version
 
