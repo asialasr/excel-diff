@@ -5,7 +5,7 @@ This project is a (currently rather shoddy) diff-tool for excel files.  It isn't
 I haven't gotten a chance to work on this in a while, but hope to get back to it soon to clean it up and test it better.
 
 ## Libraries
-This project uses the Python libraries xlsxwriter and xlrd (can be installed via pip), but I think that's it.  I'll go through and double-check that all libraries are listed.
+This project uses the Python libraries xlsxwriter, difflib, and xlrd (can be installed via pip), but I think that's it.  I'll go through and double-check that all libraries are listed.
 
 // TODO(asialasr): double-check libraries
 
